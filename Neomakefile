@@ -1,0 +1,18 @@
+bin = node_module/.bin/
+coffee = $(bin)coffee
+minify = $(bin)node_module/.bin/minify
+
+all:: dist/*.min.js
+    do      wef
+
+dist/*.min.js: dist/*.js
+    show    MINIFY
+    do      $minify < $in > $out
+
+dist/concat.js: build/script/**/*.js
+    show    CONCAT
+    do      cat $in > $out
+
+build/script/**/*.js: source/script/**/*.coffee
+    show    COFFEE $in
+    do      $coffee $in > $out
