@@ -176,16 +176,18 @@ Evaluation
 Example
 -------
 
-    require "neomake-utils" ;
+    require neomake-utils
 
-    bin = "node_module/.bin/" ;
+    bin = node_module/.bin
+    coffee = $bin/coffee
 
-    Concat .. cat $in > $out
-    Coffee .. $(bin)coffee $in > $out
-    Minify .. $(bin)minify < $in > $out
+    Concat: cat $in > $out
+    Coffee: $bin/coffee $in > $out
+    Minify: $bin/minify < $in > $out
 
     source/script/**/*.coffee
         || Coffee > build/script/**/*.js
-         | Concat > dist/concat.js ;
+        |  Concat > dist/concat.js
 
-    dist/*.js | Minify > dist/*.min.js |> all "Update all files" ;
+    dist/*.js | Minify > dist/*.min.js |> all "Update all files"
+
