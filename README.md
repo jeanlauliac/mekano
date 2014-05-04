@@ -149,12 +149,13 @@ There are two kind of transformations with *neomake*:
   * **plain** transformations noted with a single pipe '|'. In this case,
     the recipe is invoked with all the input files, and is assumed to produce
     all the output files.
+
   * **pair** transformations noted with a double pipe '||'.
     Those let you associate prerequisites and targets by pairs. For example,
     `./foo.c ./bar.c || Compile > ./foo.o ./bar.o` is equivalent to:
 
-      ./foo.c | Compile > ./foo.o
-      ./bar.c | Compile > ./bar.o
+        ./foo.c | Compile > ./foo.o
+        ./bar.c | Compile > ./bar.o
 
 
 ### Values
