@@ -22,6 +22,13 @@ properly takes account of removed and added files, and tracks command-line
 changes. The system is largely inspired by the UNIX *make(1)* command, of which
 it modestly tries to be a 21th-century alternative.
 
+*neomake* is not well suited for plain tasks (eg. 'test', 'publish'), the focus
+is on updating files. Scripts are probably a better idea (eg. sh, JS, python).
+
+The neomakefile is generally meant to be written by hand, but there is very
+little support for build-time decision-making (no 'if', no macros). You can
+instead use a dedicaced macro language, or generate from a script.
+
 This specific implementation is made with JavaScript on top of Node.js,
 but is usable for any purpose, from C/C++ compilation to web assets build.
 It also aims to be easily multiplatform.
@@ -60,9 +67,11 @@ Commands:
   * **status** Display the modified files and dirty targets. No target is
     updated. If **--silent** is specified, return a zero exit value if the
     targets are up to date; otherwise, return 1.
-  * **clean** Remove the specified targets and intermediary files. Options:
+  * **clean** Remove the specified and intermediary targets. Options:
       * **-n, --dry-run** Output files to be removed. No file is removed.
   * **aliases** Display a list of the defined aliases.
+  * **trace** Display the neomakefile interpretation. Options:
+      * **-d, --dot** Output the file graph in the graphviz dot format.
   * **help** Display neomake own help.
 
 General options:
@@ -130,6 +139,8 @@ either a single file path or a globling pattern. A path always contains a
 directory specifier, for example './foo' instead of just 'foo'. On the other
 hand, an alias name cannot contain '/' or '.' characters.
 
+#### Expansions
+
 During evaluation, multi-transformation relations are expanded to multiple
 single-transformation relations. As such, this statement:
 
@@ -144,19 +155,43 @@ is equivalent to:
 Any output directory containing targets is automatically created by *neomake*
 during the update.
 
+#### Transformations
+
 There are two kind of transformations with *neomake*:
 
   * **plain** transformations noted with a single pipe '|'. In this case,
     the recipe is invoked with all the input files, and is assumed to produce
     all the output files.
 
-  * **pair** transformations noted with a double pipe '||'.
-    Those let you associate prerequisites and targets by pairs. For example,
+  * **pair** transformations noted with a double pipe '||'. Those let you
+    associate prerequisites and targets by pairs, in order. For example,
     `./foo.c ./bar.c || Compile > ./foo.o ./bar.o` is equivalent to:
 
         ./foo.c | Compile > ./foo.o
         ./bar.c | Compile > ./bar.o
 
+#### Patterns
+
+Globbing patterns can appear both as prerequisites and targets, but yield
+different results.
+
+Prerequisite patterns expand in two steps:
+
+  * First, *neomake* looks for existing files matching the pattern. Those are
+    the original sources.
+  * Then, it looks for other relations' targets matching the pattern. Those are
+    intermediate files.
+
+Target patterns always expand as a result of the prerequisites. For each
+prerequisite found, *neomake* performs a transposition with the rules below:
+
+  * the '**' path(s) is transfered to the corresponding '**';
+  * the '*' pathname(s) is transfered to the corresponding '*'.
+
+For example, for a relation './src/**/*.c || Compile > ./obj/**/*.o', if a file
+'./src/a/foo.c' was found, the target pattern is expanded to './obj/a/foo.o'.
+Since it is a pair transformation, each file will effectively be compiled to
+its object counterpart separately.
 
 ### Values
 
@@ -170,16 +205,30 @@ values with '$name' or '$(name)'. Example:
     bin = node_module/.bin
     coffee = $bin/coffee
 
-Evaluation
-----------
+### Directives
+
+`require <name>` imports another neomakefile recipes, relations, and values.
+'name' is either a path, or an identifier; in this case *neomake* import the
+'main' file specified in `node_modules/<name>/package.json`.
+
+File update
+-----------
+
+Once the neomakefile has been interpreted, *neomake* executes the steps below.
+
+  * Determine the hierarchy of prerequisites involved to update the specified
+    targets.
+  * Compare the timestamp of the prerequisites with the build log. Mark
+    changed files as dirty.
+  * Mark targets as dirty when at least one prerequisite is dirty, or if the
+    recipe command changed according with the build log.
+  * Invoke recipes in order to update files. When possible, recipes are
+    called asynchronously to make the update faster.
 
 Example
 -------
 
-    require neomake-utils
-
     bin = node_module/.bin
-    coffee = $bin/coffee
 
     Concat: cat $in > $out
     Coffee: $bin/coffee $in > $out
@@ -190,4 +239,3 @@ Example
         |  Concat > dist/concat.js
 
     dist/*.js | Minify > dist/*.min.js |> all "Update all files"
-
