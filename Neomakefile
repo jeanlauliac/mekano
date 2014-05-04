@@ -1,18 +1,14 @@
-bin = node_module/.bin/
-coffee = $(bin)coffee
-minify = $(bin)node_module/.bin/minify
+require neomake-utils
 
-all:: dist/*.min.js
-    do      wef
+bin = node_module/.bin
+coffee = $bin/coffee
 
-dist/*.min.js: dist/*.js
-    show    MINIFY
-    do      $minify < $in > $out
+Concat: cat $in > $out
+Coffee: $bin/coffee $in > $out
+Minify: $bin/minify < $in > $out
 
-dist/concat.js: build/script/**/*.js
-    show    CONCAT
-    do      cat $in > $out
+source/script/**/*.coffee
+    || Coffee > build/script/**/*.js
+    |  Concat > dist/concat.js
 
-build/script/**/*.js: source/script/**/*.coffee
-    show    COFFEE $in
-    do      $coffee $in > $out
+dist/*.js | Minify > dist/*.min.js |> all "Update all files"
