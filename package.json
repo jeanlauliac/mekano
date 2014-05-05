@@ -1,0 +1,34 @@
+{
+  "name": "neomake",
+  "version": "0.0.0",
+  "description": "maintain, update and regenerate groups of files",
+  "main": "index.js",
+  "bin": "bin/cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jeanlauliac/neomake.git"
+  },
+  "keywords": [
+    "make",
+    "build",
+    "system",
+    "ninja",
+    "update",
+    "generate",
+    "maintain",
+    "task",
+    "command"
+  ],
+  "author": "Jean Lauliac <jean@lauliac.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jeanlauliac/neomake/issues"
+  },
+  "homepage": "https://github.com/jeanlauliac/neomake",
+  "devDependencies": {
+    "tape": "^2.12.3"
+  }
+}
