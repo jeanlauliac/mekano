@@ -9,34 +9,52 @@ var Location = require('../../lib/read/location.js')
 
 test('lex() identifier', function (t) {
     testLex(t, 'beep', [
-        new Token(Token.IDENTIFIER, 'beep', new Location(1, 1))
+        tokenOf(1, 1, Token.IDENTIFIER, 'beep')
     ])
 })
 
 test('lex() path', function (t) {
     testLex(t, 'path/to/file', [
-        new Token(Token.PATH, 'path/to/file', new Location(1, 1))
+        tokenOf(1, 1, Token.PATH, 'path/to/file')
     ])
 })
 
 test('lex() path glob', function (t) {
     testLex(t, 'path/to/**/*.glob', [
-        new Token(Token.PATH_GLOB, 'path/to/**/*.glob', new Location(1, 1))
+        tokenOf(1, 1, Token.PATH_GLOB, 'path/to/**/*.glob')
     ])
 })
 
 test('lex() require', function (t) {
     testLex(t, 'require', [
-        new Token(Token.REQUIRE, null, new Location(1, 1))
+        tokenOf(1, 1, Token.REQUIRE)
     ])
 })
 
 test('lex() recipe', function (t) {
     testLex(t, 'Foo: beep boop', [
-        new Token(Token.IDENTIFIER, 'Foo', new Location(1, 1))
-      , new Token(Token.COMMAND, 'beep boop', new Location(1, 4))
+        tokenOf(1, 1, Token.IDENTIFIER, 'Foo')
+      , tokenOf(1, 4, Token.COMMAND, 'beep boop')
     ])
 })
+
+test('lex() relation', function (t) {
+    testLex(t, './foo\n| Recipe > ./bar', [
+        tokenOf(1, 1, Token.PATH, './foo')
+      , tokenOf(1, 6, Token.WHITESPACE)
+      , tokenOf(2, 1, Token.PIPE)
+      , tokenOf(2, 2, Token.WHITESPACE)
+      , tokenOf(2, 3, Token.IDENTIFIER, 'Recipe')
+      , tokenOf(2, 9, Token.WHITESPACE)
+      , tokenOf(2, 10, Token.CHEVRON)
+      , tokenOf(2, 11, Token.WHITESPACE)
+      , tokenOf(2, 12, Token.PATH, './bar')
+    ])
+})
+
+function tokenOf(l, c, type, value) {
+    return new Token(new Location(l, c), type, value)
+}
 
 function testLex(t, str, tokens) {
     (new StringStream(str)).pipe(lex()).pipe(new TestStream(

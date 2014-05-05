@@ -5,7 +5,7 @@
   "main": "index.js",
   "bin": "bin/cli.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "faucet test/read"
   },
   "repository": {
     "type": "git",
@@ -29,6 +29,7 @@
   },
   "homepage": "https://github.com/jeanlauliac/neomake",
   "devDependencies": {
-    "tape": "^2.12.3"
+    "tape": "^2.12.3",
+    "faucet": "0.0.1"
   }
 }
