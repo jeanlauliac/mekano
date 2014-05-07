@@ -185,11 +185,11 @@ Prerequisite patterns expand in two steps:
 Target patterns always expand as a result of the prerequisites. For each
 prerequisite found, *neomake* performs a transposition with the rules below:
 
-  * the '**' path(s) is transfered to the corresponding '**';
-  * the '*' pathname(s) is transfered to the corresponding '*'.
+  * the `**` path(s) is transfered to the corresponding `**`;
+  * the `*` pathname(s) is transfered to the corresponding `*`.
 
-For example, for a relation './src/**/*.c || Compile > ./obj/**/*.o', if a file
-'./src/a/foo.c' was found, the target pattern is expanded to './obj/a/foo.o'.
+For example, for a relation `./src/**/*.c || Compile > ./obj/**/*.o`, if a file
+`./src/a/foo.c` was found, the target pattern is expanded to `./obj/a/foo.o`.
 Since it is a pair transformation, each file will effectively be compiled to
 its object counterpart separately.
 
