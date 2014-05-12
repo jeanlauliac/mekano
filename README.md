@@ -3,7 +3,18 @@ neomake
 
 **Work in progress, this is very early.**
 
-*neomake* – maintain, update and regenerate groups of files.
+tl;dr
+-----
+
+*neomake* is a make-like update tool: you have a bunch of files in some
+directories, you want to generate other files from them. You want this simple
+process to be balanced between speed and convenience. You want it not to be tied
+to any specific technology.
+
+Synopsis
+--------
+
+*neomake* maintain, update and regenerate groups of files.
 
 *neomake* is a general-purpose update tool. It examines changes made and updates
 derived files, called the targets, from the files they are derived, called the
@@ -52,7 +63,7 @@ alias neo=node_modules/.bin/neomake
 Usage
 -----
 
-    neomake <command> [options] [macro=value] [target_name...]
+    neomake <command> [options] [macro=value...] [target_name...]
 
 Commands:
 
@@ -239,3 +250,16 @@ Example
         |  Concat > dist/concat.js
 
     dist/*.js | Minify > dist/*.min.js |> all "Update all files"
+
+Trivia
+------
+
+### Why not reusing the make syntax?
+
+The classic *make* syntax "targets: prerequisites" is not employed because:
+
+  * it may not be very clear how to express chains (something like
+    "foo: bar: glo"?);
+  * inference is done the other way around than *make* (it infers targets based
+    on prerequisites)
+
