@@ -5,23 +5,25 @@ var Writable = require('stream').Writable
 var util = require('util')
 
 util.inherits(TestStream, Writable)
-function TestStream(target, testCb, opts, endCb) {
+function TestStream(target, testCb, opts) {
     this._target = target
     Writable.call(this, opts)
     this._opts = opts
     this._testCb = testCb
-    this._endCb = endCb
     var self = this
-    this.once('finish', function () {
+    this.once('finish', (function () {
         if (self._target.length > 0)
-            return endCb(new Error('some data went untested'))
-        return endCb()
-    })
+            return this.emit('tested', new Error('some data went untested'))
+        return this.emit('tested')
+    }).bind(this))
 }
 
 TestStream.prototype._write = function(chunk, encoding, cb) {
     if (this._opts.objectMode) {
-        this._testCb(chunk, this._target[0])
+        if (this._target.length === 0)
+            return cb(new Error('expected end of stream'))
+        try { this._testCb(chunk, this._target[0]) }
+        catch (err) { return cb(err) }
         this._target.shift()
         return cb()
     }
