@@ -29,9 +29,10 @@ relationships between files, and the commands that need to be executed to update
 the targets and reflect changes in their prerequisites.
 
 *neomake* focuses on correctness rather than other factors like speed. It
-properly takes account of removed and added files, and tracks command-line
-changes. The system is largely inspired by the UNIX *make(1)* command, of which
-it modestly tries to be a 21th-century alternative.
+properly takes account of removed and added files, tracks command-line changes,
+and automatically create output directories. The system is largely inspired by
+the UNIX *make(1)* command, of which it modestly tries to be a 21th-century
+alternative.
 
 *neomake* is not well suited for plain tasks (eg. 'test', 'publish'), the focus
 is on updating files. Scripts are probably a better idea (eg. sh, JS, python).
