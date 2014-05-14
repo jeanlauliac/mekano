@@ -1,5 +1,4 @@
 bin = `node_module/.bin`;
-coffee = `$bin/coffee fubar`;
 
 Concat: `cat $in > $out`;
 Coffee: `$bin/coffee $in > $out`;
