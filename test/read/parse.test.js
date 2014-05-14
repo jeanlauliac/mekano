@@ -5,7 +5,7 @@ var StringStream = require('./string-stream')
 var lex = require('../../lib/read/lex')
 var parse = require('../../lib/read/parse')
 
-testParse('recipe', 'Foo: beep boop', function (t, unit) {
+testParse('recipe', 'Foo: `beep`;', function (t, unit) {
     console.error(unit)
 })
 
