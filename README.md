@@ -64,9 +64,12 @@ This allows the project to evolve faster and introduce breaking changes.
 To avoid typing the path everytime when installed locally, one decent solution
 is to create an alias, if your shell supports it:
 
-```bash
-alias neo=node_modules/.bin/neomake
-```
+    $ alias neo=node_modules/.bin/neomake
+
+If you later forget to `npm install` a project, your shell will just tell you:
+
+    $ neo
+    bash: no such file or directory: node_modules/.bin/neomake
 
 Usage
 -----
@@ -169,9 +172,9 @@ Relation grammar is as below:
     path-glob = { ? same as path, but with at least a '*', '**' or '{,}' operator ? }
 
 A prerequisite or a target may be either a single file path or a globling
-pattern. A path always contains a directory specifier, for example `./foo`
-instead of just `foo`. `foo.js` is also recognized as a path thanks to the dot.
-On the other hand, an alias name cannot contain '/' or '.' characters.
+pattern. A path always contains one of `/` or `.`, for example `./foo`
+instead of just `foo`; `foo.js` is also recognized as a path thanks to the dot.
+On the other hand, an alias name cannot contain `/` or `.` characters.
 Here a simple relation example:
 
     source/*.c Compile => obj/*.o Link -> ./hello_world
@@ -230,11 +233,11 @@ its object counterpart separately.
 
 Value bind grammar is as below:
 
-    bind = value-name, interpolation, ";"
+    bind = value-name, "=", interpolation, ";"
     value-name = identifier
 
 A value cannot be unbound or overridden. Interpolations can refer to existing
-values with '$name' or '$(name)'. Example:
+values with `$name` or `$(name)`. Example:
 
     bin = `node_module/.bin`;
     coffee = `$bin/coffee`;
