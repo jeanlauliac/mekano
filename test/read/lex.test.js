@@ -23,21 +23,18 @@ testLex('require', 'require', [
     tokenOf(1, 1, Token.REQUIRE)
 ])
 
-testLex('recipe', 'Foo: beep boop', [
-    tokenOf(1, 1, Token.IDENTIFIER, 'Foo')
-  , tokenOf(1, 4, Token.COMMAND, 'beep boop')
+testLex('interpolation', '`beep boop`', [
+    tokenOf(1, 1, Token.INTERPOLATION, 'beep boop')
 ])
 
-testLex('relation', './foo\n| Recipe > ./bar', [
+testLex('relation', './foo\n    Recipe => ./bar', [
     tokenOf(1, 1, Token.PATH, './foo')
   , tokenOf(1, 6, Token.WHITESPACE)
-  , tokenOf(2, 1, Token.PIPE)
-  , tokenOf(2, 2, Token.WHITESPACE)
-  , tokenOf(2, 3, Token.IDENTIFIER, 'Recipe')
-  , tokenOf(2, 9, Token.WHITESPACE)
-  , tokenOf(2, 10, Token.CHEVRON)
+  , tokenOf(2, 5, Token.IDENTIFIER, 'Recipe')
   , tokenOf(2, 11, Token.WHITESPACE)
-  , tokenOf(2, 12, Token.PATH, './bar')
+  , tokenOf(2, 12, Token.FAT_ARROW)
+  , tokenOf(2, 14, Token.WHITESPACE)
+  , tokenOf(2, 15, Token.PATH, './bar')
 ])
 
 function tokenOf(l, c, type, value) {
