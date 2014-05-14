@@ -40,15 +40,17 @@ the UNIX *make(1)* command, of which it modestly tries to be a 21th-century
 alternative.
 
 *neomake* is not well suited for plain tasks (eg. 'test', 'publish'), the focus
-is on updating files. Scripts are probably a better idea (eg. sh, JS, python).
+being on updating files. Plain scripts are probably a better idea (eg. sh, JS,
+python) for those.
 
 The neomakefile is generally meant to be written by hand, but there is very
-little support for build-time decision-making (no 'if', no macros). You can
-instead use a dedicaced macro language, or generate from a script.
+little support for build-time decision-making (no 'if', no macros). However, you
+can easily use a dedicaced macro or procedural language to generate the
+neomakefile.
 
 This specific implementation is made with JavaScript on top of Node.js,
 but is usable for any purpose, from C/C++ compilation to web assets build.
-It also aims to be easily multiplatform.
+Node.js makes it easier to be multiplatform.
 
 Install
 -------
