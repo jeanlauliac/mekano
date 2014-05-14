@@ -153,9 +153,9 @@ Command lines are evaluated by the local shell, typically with `sh -c`.
 
 Relation grammar is as below:
 
-    relation = ref-list, { transformation }, { alias }, ";"
+    relation = ref-list, { transformation }, [ alias ], ";"
     transformation = recipe-name, ( "=>" | "->" ), ref-list, bind-list
-    alias = "::" alias-name, [ alias-description ]
+    alias = "::", alias-name, [ alias-description ]
     ref-list = { path | path-glob | alias-name }
     alias-name = identifier
     alias-description = interpolation
