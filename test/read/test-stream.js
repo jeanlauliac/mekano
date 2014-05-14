@@ -4,6 +4,8 @@ module.exports = TestStream
 var Writable = require('stream').Writable
 var util = require('util')
 
+var EXPECTED_END = 'expected end of stream instead of %s'
+
 util.inherits(TestStream, Writable)
 function TestStream(target, testCb, opts) {
     this._target = target
@@ -21,7 +23,7 @@ function TestStream(target, testCb, opts) {
 TestStream.prototype._write = function(chunk, encoding, cb) {
     if (this._opts.objectMode) {
         if (this._target.length === 0)
-            return cb(new Error('expected end of stream'))
+            return cb(new Error(util.format(EXPECTED_END, chunk)))
         try { this._testCb(chunk, this._target[0]) }
         catch (err) { return cb(err) }
         this._target.shift()

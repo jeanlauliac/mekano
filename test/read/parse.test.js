@@ -21,6 +21,13 @@ testParse('bind', 'Foo = `beep`;', function (t, unit) {
     t.equal(b.value, 'beep')
 })
 
+testParse('relation wo/ prereq.', 'Beep -> a.out;', function (t, unit) {
+    t.equal(unit.relations.length, 1)
+    var r = unit.relations[0]
+    t.equal(r.prereqs, 'Beep')
+    t.equal(r.transforms.length, 1)
+})
+
 function testParse(name, str, cb) {
     test('parse() ' + name, function (t) {
         var ss = new StringStream(str)

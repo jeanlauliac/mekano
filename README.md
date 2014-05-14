@@ -153,10 +153,10 @@ Command lines are evaluated by the local shell, typically with `sh -c`.
 
 Relation grammar is as below:
 
-    relation = path-list, { transformation }, { alias }, ";"
-    transformation = recipe-name, ( "=>" | "->" ), path-list, bind-list
+    relation = ref-list, { transformation }, { alias }, ";"
+    transformation = recipe-name, ( "=>" | "->" ), ref-list, bind-list
     alias = "::" alias-name, [ alias-description ]
-    path-list = { path | path-glob | alias-name }
+    ref-list = { path | path-glob | alias-name }
     alias-name = identifier
     alias-description = interpolation
     path = { ? alphanumeric character with at least a '.' or a '/' ? }
