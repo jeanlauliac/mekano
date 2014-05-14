@@ -6,16 +6,20 @@ neomake
 tl;dr
 -----
 
-*neomake* is a make-like update tool: you have a bunch of files in some
-directories, you want to generate other files from them. You want this simple
-process to be balanced between speed and convenience. You want it not to be tied
-to any specific technology. *neomake* aims to fix the frustration that can occur
-working with GNU *make(1)* on small or medium projects.
+*neomake*:
+
+  * is a make-like update tool: you have a bunch of files in some directories,
+    you want to generate other files from them;
+  * liberally aims to lessen the frustration that can occur working with GNU
+    *make(1)* on small or medium projects;
+  * is balanced between speed and convenience;
+  * is not tied to any specific technology and may be used to compile C/C++,
+    build a web application Javascript/CSS assets, or even make coffee.
 
 Synopsis
 --------
 
-*neomake* maintain, update and regenerate groups of files.
+*neomake* – maintain, update and regenerate groups of files.
 
 *neomake* is a general-purpose update tool. It examines changes made and updates
 derived files, called the targets, from the files they are derived, called the
