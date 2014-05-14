@@ -24,8 +24,12 @@ testParse('bind', 'Foo = `beep`;', function (t, unit) {
 testParse('relation wo/ prereq.', 'Beep -> a.out;', function (t, unit) {
     t.equal(unit.relations.length, 1)
     var r = unit.relations[0]
-    t.equal(r.prereqs, 'Beep')
-    t.equal(r.transforms.length, 1)
+    t.equal(r.transList.length, 1)
+    var tr = r.transList[0]
+    t.equal(tr.recipeName, 'Beep')
+    t.equal(tr.multi, false)
+    t.equal(tr.targets.length, 1)
+    t.equal(tr.targets[0].value, 'a.out')
 })
 
 function testParse(name, str, cb) {
