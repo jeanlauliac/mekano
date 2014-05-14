@@ -31,8 +31,8 @@ testParse('relation wo/ prereq.', 'Beep -> a.out;', function (t, unit) {
 function testParse(name, str, cb) {
     test('parse() ' + name, function (t) {
         var ss = new StringStream(str)
-        var ps = parse({trace: TRACE})
-        ss.pipe(lex()).pipe(ps).on('parsed', function (unit) {
+        var ps = parse(ss.pipe(lex()), {trace: TRACE})
+        ps.on('parsed', function (unit) {
             cb(t, unit)
             t.end()
         })
