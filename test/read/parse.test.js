@@ -6,7 +6,10 @@ var lex = require('../../lib/read/lex')
 var parse = require('../../lib/read/parse')
 
 testParse('recipe', 'Foo: `beep`;', function (t, unit) {
-    console.error(unit)
+    t.equal(unit.recipes.length, 1)
+    var r = unit.recipes[0]
+    t.equal(r.name, 'Foo')
+    t.equal(r.command, 'beep')
 })
 
 function testParse(name, str, cb) {
