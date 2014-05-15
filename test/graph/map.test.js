@@ -20,6 +20,16 @@ var TEST_RELS = [
 ]
 var TEST_UNIT = new ast.Unit([], TEST_RELS, [])
 
+var TEST_RELS_2 = [
+    new ast.Relation([
+        tokenOf(Token.PATH_GLOB, '*.out')
+    ], [new ast.Trans('Merge', false, [tokenOf(Token.PATH, './merged')])])
+  , new ast.Relation([
+        tokenOf(Token.PATH_GLOB, '*.c')
+    ], [new ast.Trans('Build', false, [tokenOf(Token.PATH, 'a.out')])])
+]
+var TEST_UNIT_2 = new ast.Unit([], TEST_RELS_2, [])
+
 var TEST_FS = {
     glob: function (pattern, opts, cb) {
         if (pattern === '*.c')
@@ -40,6 +50,22 @@ test('graph.map() simple tr.', function (t) {
         t.equal(fooObj.outRels[0].outFiles[0], graph.getFileByPath('a.out'))
         var out = graph.getFileByPath('a.out')
         t.equal(out.inRel.inFiles.length, 2)
+        t.end()
+    })
+})
+
+test('graph.map() globs', function (t) {
+    map(TEST_FS, TEST_UNIT_2, function (err, graph) {
+        t.error(err)
+        var out = graph.getFileByPath('a.out')
+        t.equal(out.inRel.recipe, 'Build')
+        t.equal(out.inRel.inFiles.length, 2)
+        t.equal(out.inRel.inFiles[0], graph.getFileByPath('foo.c'))
+        t.equal(out.inRel.inFiles[1], graph.getFileByPath('bar.c'))
+        t.equal(out.outRels.length, 1)
+        t.equal(out.outRels[0].recipe, 'Merge')
+        t.equal(out.outRels[0].outFiles.length, 1)
+        t.equal(out.outRels[0].outFiles[0], graph.getFileByPath('./merged'))
         t.end()
     })
 })
