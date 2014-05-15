@@ -5,7 +5,7 @@
   "main": "index.js",
   "bin": "bin/cli.js",
   "scripts": {
-    "test": "faucet test/read"
+    "test": "faucet test/read test/graph"
   },
   "repository": {
     "type": "git",
