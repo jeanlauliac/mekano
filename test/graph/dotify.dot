@@ -1,0 +1,18 @@
+digraph {
+    "foo.c" [shape=box];
+    "foo.o" [shape=box];
+    "foo.d" [shape=box];
+    "bar.c" [shape=box];
+    "bar.o" [shape=box];
+    "bar.d" [shape=box];
+    "a.out" [shape=box];
+    "__rel__foo.o" [label="Compile"];
+    {"foo.c"} -> "__rel__foo.o";
+    "__rel__foo.o" -> {"foo.o"; "foo.d"};
+    "__rel__bar.o" [label="Compile"];
+    {"bar.c"} -> "__rel__bar.o";
+    "__rel__bar.o" -> {"bar.o"; "bar.d"};
+    "__rel__a.out" [label="Link"];
+    {"foo.o"; "bar.o"} -> "__rel__a.out";
+    "__rel__a.out" -> {"a.out"};
+}

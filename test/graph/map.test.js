@@ -2,7 +2,6 @@
 
 var test = require('tape')
 var map = require('../../lib/graph/map')
-
 var ast = require('../../lib/read/ast')
 var Token = require('../../lib/read/token.js')
 var Location = require('../../lib/read/location.js')
