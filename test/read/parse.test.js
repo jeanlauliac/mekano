@@ -80,7 +80,7 @@ testParse('relation alias', 'a.out :: all `test`;'
 })
 
 function testParse(name, str, cb) {
-    test('parse() ' + name, function (t) {
+    test('read.parse() ' + name, function (t) {
         var ss = new StringStream(str)
         var ps = parse(ss.pipe(lex()), {trace: TRACE})
         ps.on('parsed', function (unit) {

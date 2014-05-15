@@ -48,7 +48,7 @@ function tokenOf(l, c, type, value) {
 }
 
 function testLex(name, str, tokens) {
-    test('lex() ' + name, function (t) {
+    test('read.lex() ' + name, function (t) {
         var ts = new TestStream(tokens, t.same.bind(t), {objectMode: true})
         var ss = new StringStream(str)
         ss.pipe(lex()).pipe(ts).on('tested', function (err) {

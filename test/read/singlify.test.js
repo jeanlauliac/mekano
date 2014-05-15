@@ -20,7 +20,7 @@ var TEST_RELS = [
 ]
 var TEST_UNIT = new ast.Unit([], TEST_RELS, [])
 
-test('singlify() ', function (t) {
+test('read.singlify() ', function (t) {
     var unit = singlify(TEST_UNIT)
     t.equal(unit.relations.length, 3)
     t.equal(unit.relations[0].transList.length, 1)

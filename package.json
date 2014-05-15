@@ -31,5 +31,11 @@
   "devDependencies": {
     "tape": "^2.12.3",
     "faucet": "0.0.1"
+  },
+  "dependencies": {
+    "gaze": "^0.6.4",
+    "glob": "^3.2.9",
+    "minimatch": "^0.3.0",
+    "slide": "^1.1.5"
   }
 }
