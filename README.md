@@ -318,3 +318,12 @@ The classic *make* syntax "targets: prerequisites" is not employed because:
     like `foo: bar: glo`?);
   * inference is done the other way around than *make* (it infers targets based
     on prerequisites; make does the contrary with rules like `%.o: %c`).
+
+### Shout out
+
+To the masters from which *neomake* is inspired:
+
+  * the historic [GNU make](http://www.gnu.org/software/make/manual/make.html);
+  * the super-fast [Ninja](http://martine.github.io/ninja/);
+  * the insightful [tup](http://gittup.org/tup/);
+  * the pragmatic [grunt](http://gruntjs.com/).
