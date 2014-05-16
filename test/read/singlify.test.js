@@ -18,19 +18,16 @@ var TEST_RELS = [
       , new ast.Trans('Link', false, [tokenOf(Token.PATH, 'a.out')])
     ], new ast.Alias('all'))
 ]
-var TEST_UNIT = new ast.Unit([], TEST_RELS, [])
 
 test('read.singlify() ', function (t) {
-    var unit = singlify(TEST_UNIT)
-    t.equal(unit.relations.length, 3)
-    t.equal(unit.relations[0].transList.length, 1)
-    t.equal(unit.relations[1].transList.length, 1)
-    t.equal(unit.relations[2].transList.length, 0)
-    t.equal(unit.relations[0].transList[0].recipeName, 'Compile')
-    t.equal(unit.relations[1].transList[0].recipeName, 'Link')
-    t.equal(unit.relations[2].alias.name, 'all')
-    t.equal(unit.relations[0].prereqList[0].value, 'foo.c')
-    t.equal(unit.relations[1].prereqList[0].value, 'foo.o')
+    var res = singlify(TEST_RELS)
+    var transs = res.transs
+    t.equal(transs.length, 2)
+    t.equal(transs[0].ast.recipeName, 'Compile')
+    t.equal(transs[1].ast.recipeName, 'Link')
+    t.equal(transs[0].prereqs[0].value, 'foo.c')
+    t.equal(transs[1].prereqs[0].value, 'foo.o')
+    t.equal(res.aliases['all'].ast.name, 'all')
     t.end()
 })
 
