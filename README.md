@@ -118,7 +118,7 @@ Usage
 
 Commands:
 
-  * **update** Update the specified targets. Everything is updated if no
+  * **update** Update the specified targets. All files are updated if no
     target is specified. Options:
       * **-k, --greedy** Continue to update feasible targets if an
         error occurs. This is useful to get a maximum of errors at once.
@@ -164,6 +164,11 @@ other cases; that is why statements must be terminated with `;`.
 
     unit = { recipe | relation | bind }
 
+The golden rule when writing a neomakefile is that **order does not matter**.
+Whatever the ordering of recipes, relations and binds is, the interpretation
+will always be the same; even if glob patterns are involved. This makes the
+syntax purely declarative.
+
 ### Recipes
 
 Recipe grammar (in [EBNF](http://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_Form))
@@ -195,8 +200,8 @@ A recipe can also bind local values with braces, for example:
     Compile: `$cc -c $in -o $out` { cc = `gcc $cflags` };
 
 Command lines are evaluated by the local shell, typically with `sh -c`.
-
-'UpperCamel' case is suggested for naming recipes.
+'UpperCamel' case is suggested for naming recipes. Recipes can appear anywhere
+in the neomakefile, either after or before the relations referring to it.
 
 ### Relations
 
@@ -281,6 +286,9 @@ values with `$name` or `$(name)`. Example:
 
     bin = `node_module/.bin`;
     coffee = `$bin/coffee`;
+
+A bound value is available anywhere in the neomakefile, even before the
+declaration.
 
 <!---
 ### Directives
