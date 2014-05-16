@@ -10,5 +10,6 @@
     "white": true,
     "eqnull": true,
     "asi": true,
-    "laxcomma": true
+    "laxcomma": true,
+    "sub": true
 }
