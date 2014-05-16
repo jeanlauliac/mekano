@@ -19,16 +19,6 @@ var TEST_TRANSS = [
     ], [tokenOf(Token.PATH, 'bar.o')])
 ]
 
-// var TEST_RELS_2 = [
-//     new ast.Relation([
-//         tokenOf(Token.PATH_GLOB, '*.out')
-//     ], [new ast.Trans('Merge', false, [tokenOf(Token.PATH, './merged')])])
-//   , new ast.Relation([
-//         tokenOf(Token.PATH_GLOB, '*.c')
-//     ], [new ast.Trans('Build', false, [tokenOf(Token.PATH, 'a.out')])])
-// ]
-// var TEST_UNIT_2 = new ast.Unit([], TEST_RELS_2, [])
-
 var TEST_FS = {
     glob: function (pattern, opts, cb) {
         if (typeof cb === 'undefined') {
@@ -81,21 +71,52 @@ test('graph.map() globs', function (t) {
     })
 })
 
-test.skip('graph.map() globs', function (t) {
-    map(TEST_FS, TEST_TRANSS_2, function (err, graph) {
+var TEST_TRANSS_MULTI = [
+    new interRep.PlainTrans({multi:true}, [
+        tokenOf(Token.PATH_GLOB, '*.c')
+    ], [tokenOf(Token.PATH_GLOB, '*.o')])
+  , new interRep.PlainTrans({multi: true}, [
+        tokenOf(Token.PATH_GLOB, '*.o')
+    ], [tokenOf(Token.PATH_GLOB, '*.a')])
+]
+
+test('graph.map() multi', function (t) {
+    map(TEST_FS, TEST_TRANSS_MULTI, function (err, graph) {
         t.error(err)
-        var out = graph.getFileByPath('a.out')
-        t.equal(out.inRel.recipe, 'Build')
-        t.equal(out.inRel.inFiles.length, 2)
-        t.equal(out.inRel.inFiles[0], graph.getFileByPath('foo.c'))
-        t.equal(out.inRel.inFiles[1], graph.getFileByPath('bar.c'))
-        t.equal(out.outRels.length, 1)
-        t.equal(out.outRels[0].recipe, 'Merge')
-        t.equal(out.outRels[0].outFiles.length, 1)
-        t.equal(out.outRels[0].outFiles[0], graph.getFileByPath('./merged'))
+        testMultiGraph(t, graph)
         t.end()
     })
 })
+
+var TEST_TRANSS_MULTI_INV = [
+    new interRep.PlainTrans({multi: true}, [
+        tokenOf(Token.PATH_GLOB, '*.o')
+    ], [tokenOf(Token.PATH_GLOB, '*.a')])
+  , new interRep.PlainTrans({multi:true}, [
+        tokenOf(Token.PATH_GLOB, '*.c')
+    ], [tokenOf(Token.PATH_GLOB, '*.o')])
+]
+
+test('graph.map() multi inv.', function (t) {
+    map(TEST_FS, TEST_TRANSS_MULTI_INV, function (err, graph) {
+        t.error(err)
+        testMultiGraph(t, graph)
+        t.end()
+    })
+})
+
+function testMultiGraph(t, graph) {
+    var fooObj = graph.getFileByPath('foo.o')
+    t.equal(fooObj.inEdge.inFiles.length, 1)
+    t.equal(fooObj.inEdge.inFiles[0].path, 'foo.c')
+    t.equal(fooObj.outEdges[0].outFiles.length, 1)
+    t.equal(fooObj.outEdges[0].outFiles[0].path, 'foo.a')
+    var barObj = graph.getFileByPath('bar.o')
+    t.equal(barObj.inEdge.inFiles.length, 1)
+    t.equal(barObj.inEdge.inFiles[0].path, 'bar.c')
+    t.equal(barObj.outEdges[0].outFiles.length, 1)
+    t.equal(barObj.outEdges[0].outFiles[0].path, 'bar.a')
+}
 
 function tokenOf(type, value) {
     return new Token(new Location(1, 1), type, value)
