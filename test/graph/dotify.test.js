@@ -13,9 +13,9 @@ var bar_c = TEST_GRAPH.getFileByPath('bar.c')
 var bar_o = TEST_GRAPH.getFileByPath('bar.o')
 var bar_d = TEST_GRAPH.getFileByPath('bar.d')
 var a_out = TEST_GRAPH.getFileByPath('a.out')
-TEST_GRAPH.pushRelation('Compile', [foo_c], [foo_o, foo_d])
-TEST_GRAPH.pushRelation('Compile', [bar_c], [bar_o, bar_d])
-TEST_GRAPH.pushRelation('Link', [foo_o, bar_o], [a_out])
+TEST_GRAPH.pushEdge({ast:{recipeName:'Compile'}}, [foo_o, foo_d], [foo_c])
+TEST_GRAPH.pushEdge({ast:{recipeName:'Compile'}}, [bar_o, bar_d], [bar_c])
+TEST_GRAPH.pushEdge({ast:{recipeName:'Link'}}, [a_out], [foo_o, bar_o])
 
 test('graph.dotify()', function (t) {
     var str = ''
