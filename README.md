@@ -3,8 +3,10 @@ neomake
 
 **Work in progress, this is very early.**
 
-tl;dr
------
+Synopsis
+--------
+
+*neomake(1)* – maintain, update and regenerate groups of files.
 
 *neomake*:
 
@@ -14,12 +16,50 @@ tl;dr
     *make(1)* on small or medium projects;
   * is balanced between speed and convenience;
   * is not tied to any specific technology and may be used to compile C/C++,
-    build a web application Javascript/CSS assets, or even make coffee.
+    build a web application Javascript/CSS assets, or brew your coffee.
 
-Synopsis
---------
+Example
+-------
 
-*neomake* – maintain, update and regenerate groups of files.
+In `./Neomakefile`:
+
+    bin = `node_module/.bin`;
+
+    Concat: `cat $in > $out`;
+    Coffee: `$bin/coffee $in > $out`;
+    Minify: `$bin/minify < $in > $out`;
+
+    source/**/*.coffee
+        Coffee => build/**/*.js
+        Concat -> dist/concat.js;
+
+    dist/*.js
+        Minify => dist/*.min.js
+        :: all `the minified JS`;
+
+In your preferred shell:
+
+    $ ls
+    Neomakefile   source
+
+    $ neomake update
+    [        ]   0.0%   Coffee source/foo.coffee -> build/foo.js
+    [##      ]  25.0%   Coffee source/bar.coffee -> build/bar.js
+    [####    ]  50.0%   Concat build/foo.js build/bar.js -> dist/concat.js
+    [######  ]  75.0%   Minify dist/concat.js -> dist/concat.min.js
+    [########] 100.0%   Updated.
+
+    $ neomake update
+    Everything is up to date.
+
+    $ ls
+    Neomakefile   source  build   dist
+
+    $ ls dist
+    concat.js   concat.min.js
+
+Description
+-----------
 
 *neomake* is a general-purpose update tool. It examines changes made and updates
 derived files, called the targets, from the files they are derived, called the
@@ -34,13 +74,13 @@ relationships between files, and the commands that need to be executed to update
 the targets and reflect changes in their prerequisites.
 
 *neomake* focuses on correctness rather than other factors like speed. It
-properly takes account of removed and added files, tracks command-line changes,
-and automatically create output directories. The system is largely inspired by
-the UNIX *make(1)* command, of which it modestly tries to be a 21th-century
-alternative.
+properly takes account of removed and added files; tracks command-line changes;
+automatically create output directories; and provides sane semantics for
+dependency definitions. This tool is largely inspired by the UNIX *make(1)*
+utility, of which it modestly tries to be a 21th-century alternative.
 
-*neomake* is not well suited for plain tasks (eg. 'test', 'publish'), the focus
-being on updating files. Plain scripts are probably a better idea (eg. sh, JS,
+*neomake* only knows how to update files. It is not well suited for 'tasks' (eg.
+'test', 'publish'). Plain scripts are probably a better idea (eg. sh, JS,
 python) for those.
 
 The neomakefile is generally meant to be written by hand, but there is very
@@ -266,34 +306,6 @@ Once the neomakefile has been interpreted, *neomake* executes the steps below.
 
 Any output directory containing targets is automatically created by *neomake*
 during the update.
-
-Example
--------
-
-    bin = `node_module/.bin`;
-
-    Concat: `cat $in > $out`;
-    Coffee: `$bin/coffee $in > $out`;
-    Minify: `$bin/minify < $in > $out`;
-
-    source/**/*.coffee
-        Coffee => build/**/*.js
-        Concat -> dist/concat.js;
-
-    dist/*.js
-        Minify => dist/*.min.js
-        :: all `Update all files`;
-
-Running *neomake*:
-
-    $ neomake update
-    [        ]   0.0%   Coffee source/foo.coffee -> build/foo.js
-    [##      ]  25.0%   Coffee source/bar.coffee -> build/bar.js
-    [####    ]  50.0%   Concat build/foo.js build/bar.js -> dist/concat.js
-    [######  ]  75.0%   Minify dist/concat.js -> dist/concat.min.js
-    [########] 100.0%   Updated.
-    $ neomake update
-    Everything is up to date.
 
 Trivia
 ------
