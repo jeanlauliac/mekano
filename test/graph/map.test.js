@@ -42,7 +42,7 @@ var TEST_FS = {
 }
 
 test('graph.map() simple', function (t) {
-    map(TEST_FS, TEST_TRANSS, function (err, graph) {
+    map(TEST_FS, TEST_TRANSS, function testGraph(err, graph) {
         t.error(err)
         var fooObj = graph.getFileByPath('foo.o')
         t.equal(fooObj.inEdge.inFiles.length, 1)
@@ -51,6 +51,32 @@ test('graph.map() simple', function (t) {
         t.equal(fooObj.outEdges[0].outFiles.length, 1)
         t.equal(fooObj.outEdges[0].outFiles[0].path, 'a.out')
         t.equal(fooObj.outEdges[0].inFiles.length, 2)
+        t.end()
+    })
+})
+
+var TEST_TRANSS_GLOBS = [
+    new interRep.PlainTrans({multi:false}, [
+        tokenOf(Token.PATH_GLOB, '*.o')
+    ], [tokenOf(Token.PATH, 'a.out')])
+  , new interRep.PlainTrans({multi: false}, [
+        tokenOf(Token.PATH_GLOB, '*.c')
+    ], [
+        tokenOf(Token.PATH, 'foo.o')
+      , tokenOf(Token.PATH, 'bar.o')
+    ])
+]
+
+test('graph.map() globs', function (t) {
+    map(TEST_FS, TEST_TRANSS_GLOBS, function testGraph(err, graph) {
+        t.error(err)
+        var fooObj = graph.getFileByPath('foo.o')
+        t.equal(fooObj.inEdge.inFiles.length, 2)
+        t.equal(fooObj.inEdge.inFiles[0].path, 'foo.c')
+        t.equal(fooObj.inEdge.inFiles[1].path, 'bar.c')
+        t.equal(fooObj.outEdges.length, 1)
+        t.equal(fooObj.outEdges[0].outFiles.length, 1)
+        t.equal(fooObj.outEdges[0].outFiles[0].path, 'a.out')
         t.end()
     })
 })
