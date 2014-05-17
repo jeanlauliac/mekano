@@ -3,7 +3,9 @@
   "version": "0.0.0",
   "description": "maintain, update and regenerate groups of files",
   "main": "index.js",
-  "bin": "bin/cli.js",
+  "bin": {
+    "neomake": "bin/cli.js"
+  },
   "scripts": {
     "test": "faucet test/read test/graph test/update"
   },
@@ -33,10 +35,12 @@
     "faucet": "0.0.1"
   },
   "dependencies": {
+    "abbrev": "^1.0.5",
     "gaze": "^0.6.4",
     "glob": "^3.2.9",
     "minimatch": "^0.3.0",
     "murmurhash-js": "^1.0.0",
+    "nopt": "^2.2.1",
     "slide": "^1.1.5"
   }
 }
