@@ -3,20 +3,20 @@
 var test = require('tape')
 var update = require('../../lib/update/update')
 
-var tg = require('./test-graph')
-var TEST_SUBGRAPH = [tg.foo_o, tg.foo_c, tg.a_out, tg.bar_o, tg.bar_c]
+var tg = require('../test-graph')
+var TEST_EDGES = [tg.a_out.inEdge, tg.foo_o.inEdge, tg.bar_o.inEdge]
 
-var TEST_FS = {
-    lstat: function (path, cb) {
-        return cb(null, {mtime: new Date(42)})
-    }
-}
+var RES = ['foo.o', 'bar.o', 'a.out']
 
 test('update.update()', function (t) {
-    update(TEST_FS, tg.graph, TEST_SUBGRAPH, function (err) {
+    var i = 0
+    var runEdge = function (edge, cb) {
+        t.equal(edge.outFiles[0].path, RES[i])
+        process.nextTick(cb.bind(null, null))
+        i++
+    }
+    update(TEST_EDGES, runEdge, function (err) {
         t.error(err)
         t.end()
-    }).on('progress', function (st) {
-        console.error('[%d/%d]', st.done, st.total, st.edge.outFiles)
     })
 })
