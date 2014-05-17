@@ -36,6 +36,7 @@
     "gaze": "^0.6.4",
     "glob": "^3.2.9",
     "minimatch": "^0.3.0",
+    "murmurhash-js": "^1.0.0",
     "slide": "^1.1.5"
   }
 }

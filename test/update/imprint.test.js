@@ -1,20 +1,10 @@
 'use strict';
 
 var test = require('tape')
-var Graph = require('../../lib/graph/graph')
 var imprint = require('../../lib/update/imprint')
 
-var TEST_GRAPH = new Graph()
-var foo_c = TEST_GRAPH.getFileByPath('foo.c')
-var foo_o = TEST_GRAPH.getFileByPath('foo.o')
-var bar_c = TEST_GRAPH.getFileByPath('bar.c')
-var bar_o = TEST_GRAPH.getFileByPath('bar.o')
-var a_out = TEST_GRAPH.getFileByPath('a.out')
-TEST_GRAPH.pushEdge(null, [foo_o], [foo_c])
-TEST_GRAPH.pushEdge(null, [bar_o], [bar_c])
-TEST_GRAPH.pushEdge(null, [a_out], [foo_o, bar_o])
-
-var TEST_FILES = [foo_c, foo_o, bar_c, bar_o, a_out]
+var tg = require('../test-graph')
+var TEST_FILES = [tg.foo_c, tg.foo_o, tg.bar_c, tg.bar_o, tg.a_out]
 
 var TEST_CMDS = [
     'gcc -c foo.c -o foo.o'

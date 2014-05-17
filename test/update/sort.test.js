@@ -4,20 +4,10 @@ var test = require('tape')
 var Graph = require('../../lib/graph/graph')
 var sort = require('../../lib/update/sort')
 
-var TEST_GRAPH = new Graph()
-var foo_c = TEST_GRAPH.getFileByPath('foo.c')
-var foo_o = TEST_GRAPH.getFileByPath('foo.o')
-var foo_d = TEST_GRAPH.getFileByPath('foo.d')
-var bar_c = TEST_GRAPH.getFileByPath('bar.c')
-var bar_o = TEST_GRAPH.getFileByPath('bar.o')
-var bar_d = TEST_GRAPH.getFileByPath('bar.d')
-var a_out = TEST_GRAPH.getFileByPath('a.out')
-TEST_GRAPH.pushEdge(null, [foo_o, foo_d], [foo_c])
-TEST_GRAPH.pushEdge(null, [bar_o, bar_d], [bar_c])
-TEST_GRAPH.pushEdge(null, [a_out], [foo_o, bar_o])
+var tg = require('../test-graph')
 
 test('update.sort()', function (t) {
-    var targets = TEST_GRAPH.getFilesByPaths(['a.out'])
+    var targets = [tg.a_out]
     var files = sort(targets)
     t.equal(files[0].path, 'foo.c')
     t.equal(files[1].path, 'foo.o')
