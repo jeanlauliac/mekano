@@ -4,10 +4,21 @@ Concat: `cat $in > $out`;
 Coffee: `$bin/coffee $in > $out`;
 Minify: `$bin/minify < $in > $out`;
 
-source/script/**/*.coffee
-    Coffee => build/script/**/*.js
+src/**/*.coffee
+    Coffee => build/**/*.js
     Concat -> dist/concat.js;
 
 dist/*.js
     Minify => dist/*.min.js
     :: all `Update all files`;
+
+
+
+*.coffee => *.js
+*.js -> dist/concat.js
+dist/*.js -> dist/*.min.js
+
+
+
+*.y => *.c
+*.c -> a.out

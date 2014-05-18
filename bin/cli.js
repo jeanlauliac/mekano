@@ -32,7 +32,7 @@ function main() {
     }
     Commands[command](opts, function (err) {
         if (err) {
-            console.error(err.message)
+            console.error('error: %s', err.message)
             if (err.code) process.exit(err.code)
             process.exit(1)
         }

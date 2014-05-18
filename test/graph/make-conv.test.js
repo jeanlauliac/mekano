@@ -11,7 +11,7 @@ test('graph.makeConv() single star', function (t) {
 })
 
 test('graph.makeConv() double star', function (t) {
-    var conv = makeConv('source/**/*.c', 'build/**/*.o')
-    t.equal(conv('source/path/to/foo.c'), 'build/path/to/foo.o')
+    var conv = makeConv('source/**/*.c', 'build/**/*.obj')
+    t.equal(conv('source/path/to/foo.c'), 'build/path/to/foo.obj')
     t.end()
 })

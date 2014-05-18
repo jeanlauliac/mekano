@@ -1,11 +1,7 @@
 'use strict';
 module.exports = update
 
-var fs = require('fs')
-
-var DEFAULT_PATHS = ['Neomakefile', 'neomakefile'];
-var NO_MAKEFILE = 'Neomakefile not found'
-
+var util = require('util')
 var fs = require('fs')
 var glob = require('glob')
 var read = require('../lib/read')
@@ -16,34 +12,41 @@ var Log = require('../lib/update/log')
 var identify = require('../lib/update/identify')
 var runEdges = require('../lib/update/run-edges')
 
+var DEFAULT_PATHS = ['Neomakefile', 'neomakefile'];
+var NO_MAKEFILE = 'Neomakefile not found'
+
 function update(opts, cb) {
-    openSomeInput(opts.file, function (err, input) {
+    openSomeInput(opts.file, function (err, input, filePath) {
         if (err) return cb(err)
-        updateInput(input, cb)
+        updateInput(input, filePath, cb)
     })
 }
 
 function openSomeInput(filePath, cb) {
-    if (filePath === '-') return cb(null, process.stdin)
+    if (filePath === '-') return cb(null, process.stdin, '<stdin>')
     if (filePath) return openInput(filePath, cb)
     ;(function next(i) {
         if (i >= DEFAULT_PATHS.length) return cb(new Error(NO_MAKEFILE))
         openInput(DEFAULT_PATHS[i], function (err, stream) {
             if (err) return next(i + 1)
-            return cb(null, stream)
+            return cb(null, stream, DEFAULT_PATHS[i])
         })
     })(0)
 }
 
 function openInput(filePath, cb) {
     var stream = fs.createReadStream(filePath)
-    stream.on('open', function () { return cb(null, stream) })
+    stream.on('open', function () { return cb(null, stream, filePath) })
     stream.on('error', function (err) { return cb(err) })
 }
 
-function updateInput(input, cb) {
+function updateInput(input, filePath, cb) {
     read(input, function (err, transs) {
-        if (err) return cb(err)
+        if (err) {
+            err.filePath = filePath
+            err.message = util.format('%s: %s', filePath, err.message)
+            return cb(err)
+        }
         console.log(transs)
         map(glob, transs, function (err, graph) {
             if (err) return cb(err)
