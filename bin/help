@@ -1,3 +1,8 @@
 
 Usage: neomake <command>
 
+where <command> is one of:
+    update, status, clean, aliases, trace, help
+
+neomake help <term>     search for help on <term>
+

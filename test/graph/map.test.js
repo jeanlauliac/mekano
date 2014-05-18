@@ -19,20 +19,18 @@ var TEST_TRANSS = [
     ], [tokenOf(Token.PATH, 'bar.o')])
 ]
 
-var TEST_FS = {
-    glob: function (pattern, opts, cb) {
-        if (typeof cb === 'undefined') {
-            cb = opts
-            opts = {}
-        }
-        if (pattern === '*.c')
-            return process.nextTick(cb.bind(null, null, ['foo.c', 'bar.c']))
-        return process.nextTick(cb.bind(null, null, []))
+var TEST_GLOB = function glob(pattern, opts, cb) {
+    if (typeof cb === 'undefined') {
+        cb = opts
+        opts = {}
     }
+    if (pattern === '*.c')
+        return process.nextTick(cb.bind(null, null, ['foo.c', 'bar.c']))
+    return process.nextTick(cb.bind(null, null, []))
 }
 
 test('graph.map() simple', function (t) {
-    map(TEST_FS, TEST_TRANSS, function testGraph(err, graph) {
+    map(TEST_GLOB, TEST_TRANSS, function testGraph(err, graph) {
         t.error(err)
         var fooObj = graph.getFileByPath('foo.o')
         t.equal(fooObj.inEdge.inFiles.length, 1)
@@ -58,7 +56,7 @@ var TEST_TRANSS_GLOBS = [
 ]
 
 test('graph.map() globs', function (t) {
-    map(TEST_FS, TEST_TRANSS_GLOBS, function testGraph(err, graph) {
+    map(TEST_GLOB, TEST_TRANSS_GLOBS, function testGraph(err, graph) {
         t.error(err)
         var fooObj = graph.getFileByPath('foo.o')
         t.equal(fooObj.inEdge.inFiles.length, 2)
@@ -81,7 +79,7 @@ var TEST_TRANSS_MULTI = [
 ]
 
 test('graph.map() multi', function (t) {
-    map(TEST_FS, TEST_TRANSS_MULTI, function (err, graph) {
+    map(TEST_GLOB, TEST_TRANSS_MULTI, function (err, graph) {
         t.error(err)
         testMultiGraph(t, graph)
         t.end()
@@ -98,7 +96,7 @@ var TEST_TRANSS_MULTI_INV = [
 ]
 
 test('graph.map() multi inv.', function (t) {
-    map(TEST_FS, TEST_TRANSS_MULTI_INV, function (err, graph) {
+    map(TEST_GLOB, TEST_TRANSS_MULTI_INV, function (err, graph) {
         t.error(err)
         testMultiGraph(t, graph)
         t.end()
