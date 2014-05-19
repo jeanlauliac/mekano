@@ -4,21 +4,20 @@ var test = require('tape')
 var StringStream = require('./string-stream')
 var lex = require('../../lib/read/lex')
 var parse = require('../../lib/read/parse')
+var Scope = require('../../lib/scope')
 
 var TRACE = process.env.TRACE === '1'
 
 testParse('recipe', 'Foo: `beep`;', function (t, unit) {
-    t.equal(unit.recipes.length, 1)
-    var r = unit.recipes[0]
+    var r = unit.recipes['Foo']
     t.equal(r.name, 'Foo')
-    t.equal(r.command, 'beep')
+    t.equal(r.command.expand(new Scope()), 'beep')
 })
 
-testParse('bind', 'Foo = `beep`;', function (t, unit) {
-    t.equal(unit.binds.length, 1)
-    var b = unit.binds[0]
-    t.equal(b.name, 'Foo')
-    t.equal(b.value, 'beep')
+testParse('bind', 'foo = `beep`;', function (t, unit) {
+    var b = unit.binds['foo']
+    t.equal(b.name, 'foo')
+    t.equal(b.value.expand(new Scope()), 'beep')
 })
 
 testParse('relation single-trans wo/ prereq.', 'Beep -> a.out;'

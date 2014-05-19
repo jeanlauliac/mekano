@@ -7,7 +7,7 @@
     "neomake": "bin/cli.js"
   },
   "scripts": {
-    "test": "faucet test/read test/graph test/update"
+    "test": "faucet test/read test/graph test/update test"
   },
   "repository": {
     "type": "git",
