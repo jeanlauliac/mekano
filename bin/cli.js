@@ -30,7 +30,7 @@ function main() {
         console.error(util.format('unknow command `%s\'', cmdAbbr))
         return 1
     }
-    Commands[command](opts, function (err) {
+    var ev = Commands[command](opts, function (err) {
         if (err) {
             console.error('error: %s', err.message)
             if (err.code) process.exit(err.code)
@@ -38,6 +38,11 @@ function main() {
         }
         process.exit(0)
     })
+    if (ev.on) {
+        ev.on('error', function (err) {
+            console.error('error: %s', err.message)
+        })
+    }
 }
 
 var Commands = {}

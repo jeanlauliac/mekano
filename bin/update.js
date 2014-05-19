@@ -4,6 +4,7 @@ module.exports = update
 var util = require('util')
 var fs = require('fs')
 var glob = require('glob')
+var EventEmitter = require('events').EventEmitter
 var read = require('../lib/read')
 var map = require('../lib/graph/map')
 var sort = require('../lib/update/sort')
@@ -18,10 +19,14 @@ var DEFAULT_PATHS = ['Neomakefile', 'neomakefile'];
 var NO_MAKEFILE = 'Neomakefile not found'
 
 function update(opts, cb) {
+    var ev = new EventEmitter()
     openSomeInput(opts.file, function (err, input, filePath) {
         if (err) return cb(err)
-        updateInput(input, filePath, cb)
+        updateInput(input, filePath, cb).on('error', function (err) {
+            ev.emit('error', err)
+        })
     })
+    return ev
 }
 
 function openSomeInput(filePath, cb) {
@@ -43,7 +48,7 @@ function openInput(filePath, cb) {
 }
 
 function updateInput(input, filePath, cb) {
-    read(input, function (err, transs, unit) {
+    return read(input, function (err, transs, unit) {
         if (err) {
             err.filePath = filePath
             err.message = util.format('%s: %s', filePath, err.message)
