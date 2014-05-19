@@ -5,7 +5,9 @@ Coffee: `$bin/coffee $in > $out`;
 Minify: `$bin/minify < $in > $out`;
 
 src/**/*.coffee
-    Coffee => build/**/*.js
+    Coffee => build/**/*.js;
+
+build/**/*.js src/**/*.js
     Concat -> dist/concat.js;
 
 dist/*.js
