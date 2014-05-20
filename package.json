@@ -1,8 +1,13 @@
 {
-  "name": "neomake",
+  "name": "mekano",
   "version": "0.0.0",
   "description": "maintain, update and regenerate groups of files",
   "main": "index.js",
+  "files": [
+    "bin",
+    "lib",
+    "LICENSE"
+  ],
   "bin": {
     "neomake": "bin/cli.js"
   },
@@ -11,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/jeanlauliac/neomake.git"
+    "url": "git://github.com/jeanlauliac/mekano.git"
   },
   "keywords": [
     "make",
@@ -22,14 +27,22 @@
     "generate",
     "maintain",
     "task",
-    "command"
+    "command",
+    "minify",
+    "compile",
+    "transpile",
+    "tool",
+    "jake",
+    "rake",
+    "cake",
+    "cli"
   ],
   "author": "Jean Lauliac <jean@lauliac.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/jeanlauliac/neomake/issues"
+    "url": "https://github.com/jeanlauliac/mekano/issues"
   },
-  "homepage": "https://github.com/jeanlauliac/neomake",
+  "homepage": "https://github.com/jeanlauliac/mekano",
   "devDependencies": {
     "tape": "^2.12.3",
     "faucet": "0.0.1"
