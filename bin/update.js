@@ -18,7 +18,8 @@ var identify = require('../lib/update/identify')
 var runEdges = require('../lib/update/run-edges')
 var Scope = require('../lib/scope')
 
-var DEFAULT_PATHS = ['Neomakefile', 'neomakefile'];
+var DEFAULT_PATHS = ['Neomakefile', 'neomakefile']
+var LOG_PATH = '.mekano/log.json'
 var NO_MAKEFILE = 'Neomakefile not found'
 
 function update(opts, cb) {
@@ -51,51 +52,90 @@ function openInput(filePath, cb) {
 }
 
 function updateInput(input, filePath, cb) {
-    return read(input, function (err, transs, unit) {
+    var ev = read(input, function (err, transs, unit) {
         if (err) {
             err.filePath = filePath
             err.message = util.format('%s: %s', filePath, err.message)
             return cb(err)
         }
-        var log = new Log()
-        var scope = Scope.fromBinds(unit.binds)
-        map(glob, log, transs, function (err, graph) {
-            if (err) return cb(err)
-            updateGraph(log, scope, unit.recipes, graph, cb)
+        Log.fromStream(fs.createReadStream(LOG_PATH), function (err, log) {
+            if (err) log = new Log()
+            var scope = Scope.fromBinds(unit.binds)
+            map(glob, log, transs, function (err, graph) {
+                if (err) return cb(err)
+                updateGraph(log, scope, unit.recipes, graph, function (err) {
+                    log.save(fs.createWriteStream(LOG_PATH)).end(function () {
+                        return cb(err)
+                    })
+                }).on('error', function (err) {
+                    ev.emit('error', err)
+                })
+            })
         })
     })
+    return ev
 }
 
 function updateGraph(log, scope, recipes, graph, cb) {
     var files = sort(graph.files)
     var cmds = expandCmds(scope, recipes, graph.edges)
+    var ev = new EventEmitter()
     imprint(fs, files, cmds, function (err, imps) {
         var edges = identify(log, files, imps)
-        var st = {cmds: cmds, edges: edges, runCount: 0}
+        if (edges.length === 0) {
+            console.log('Everything is up to date.')
+            return cb(null)
+        }
+        var st = {cmds: cmds, edges: edges, runCount: 0, log: log, imps: imps}
         var re = queuedFnOf(runEdge.bind(null, st), os.cpus().length)
-        console.log('[          ]   0.0%  Updating...')
+        console.log(makePercBar(0, 20) + '   0.0%')
         runEdges(edges, re, function (err) {
             if (err) return cb(err)
-            console.log('[          ] Updated.')
+            console.log('Done.')
             return cb(null)
-        })
+        }).on('error', function (err) { ev.emit('error', err) })
     })
+    return ev
 }
 
 function runEdge(st, edge, cb) {
-    exec(st.cmds[edge.index], function (err, stdout, stderr) {
-        if (!err) st.runCount++
-        var perc = Math.round((st.runCount / st.edges.length) * 1000) / 10
-        while (perc.length < 5) perc = ' ' + perc
-        console.log('[          ] %s%  %s %s -> %s'
-          , perc
-          , edge.trans.ast.recipeName
-          , edge.inFiles.map(pathOf).join(' ')
-          , edge.outFiles.map(pathOf).join(' '))
-        if (stdout.length > 0) console.log(stdout)
-        if (stdout.length > 0) console.log(stderr)
-        cb(err)
-    })
+    var cmd = st.cmds[edge.index]
+    setTimeout(function () {
+        exec(cmd, function (err, stdout, stderr) {
+            if (!err) st.runCount++
+            var perc = (st.runCount / st.edges.length)
+            console.log('%s %s%  %s %s -> %s'
+              , makePercBar(perc, 20)
+              , pad((perc * 100).toFixed(1), 5)
+              , edge.trans.ast.recipeName
+              , edge.inFiles.map(pathOf).join(' ')
+              , edge.outFiles.map(pathOf).join(' '))
+            if (stdout.length > 0) process.stdout.write(stdout)
+            if (stderr.length > 0) process.stderr.write(stderr)
+            if (err) {
+                return cb(new Error(util.format('command failed: %s', cmd)))
+            }
+            edge.outFiles.forEach(function (file) {
+                st.log.update(file.path, st.imps[file.path])
+            })
+            return cb(err)
+        })
+    }, 500)
+}
+
+function pad(str, len) {
+    while (str.length < len) str = ' ' + str
+    return str
+}
+
+function makePercBar(perc, len) {
+    var str = '['
+    var i = 0
+    for (; i < len && perc > i / len; ++i)
+        str += '#'
+    for (; i < len; ++i)
+        str += ' '
+    return str + ']'
 }
 
 function pathOf(file) {

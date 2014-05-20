@@ -1,8 +1,8 @@
-bin = `node_module/.bin`;
+bin = `node_modules/.bin`;
 
 Concat: `cat $in > $out`;
-Coffee: `$bin/coffee $in > $out`;
-Minify: `$bin/minify < $in > $out`;
+Coffee: `$bin/coffee -cp $in > $out`;
+Minify: `$bin/uglifyjs < $in > $out`;
 
 src/**/*.coffee
     Coffee => build/**/*.js;
