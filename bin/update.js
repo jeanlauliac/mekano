@@ -5,6 +5,7 @@ var util = require('util')
 var fs = require('fs')
 var os = require('os')
 var glob = require('glob')
+var readline = require('readline')
 var exec = require('child_process').exec
 var EventEmitter = require('events').EventEmitter
 var read = require('../lib/read')
@@ -81,6 +82,7 @@ function updateGraph(log, scope, recipes, graph, cb) {
     var cmds = expandCmds(scope, recipes, graph.edges)
     var ev = new EventEmitter()
     imprint(fs, files, cmds, function (err, imps) {
+        if (err) return cb(err)
         var edges = identify(log, files, imps)
         if (edges.length === 0) {
             console.log('Everything is up to date.')
@@ -88,8 +90,9 @@ function updateGraph(log, scope, recipes, graph, cb) {
         }
         var st = {cmds: cmds, edges: edges, runCount: 0, log: log, imps: imps}
         var re = queuedFnOf(runEdge.bind(null, st), os.cpus().length)
-        console.log(makePercBar(0, 20) + '   0.0%')
+        updateOutput(0, '')
         runEdges(edges, re, function (err) {
+            console.log()
             if (err) return cb(err)
             console.log('Done.')
             return cb(null)
@@ -100,27 +103,38 @@ function updateGraph(log, scope, recipes, graph, cb) {
 
 function runEdge(st, edge, cb) {
     var cmd = st.cmds[edge.index]
-    setTimeout(function () {
+    setTimeout(function() {
         exec(cmd, function (err, stdout, stderr) {
             if (!err) st.runCount++
             var perc = (st.runCount / st.edges.length)
-            console.log('%s %s%  %s %s -> %s'
-              , makePercBar(perc, 20)
-              , pad((perc * 100).toFixed(1), 5)
+            readline.clearLine(process.stdout, 0)
+            readline.cursorTo(process.stdout, 0)
+            updateOutput(perc, util.format('%s %s -> %s'
               , edge.trans.ast.recipeName
               , edge.inFiles.map(pathOf).join(' ')
-              , edge.outFiles.map(pathOf).join(' '))
-            if (stdout.length > 0) process.stdout.write(stdout)
-            if (stderr.length > 0) process.stderr.write(stderr)
-            if (err) {
-                return cb(new Error(util.format('command failed: %s', cmd)))
+              , edge.outFiles.map(pathOf).join(' ')))
+            if (stdout.length > 0 || stderr.length > 0) {
+                process.stdout.write('\n')
+                process.stdout.write(stdout)
+                process.stderr.write(stderr)
             }
+            if (err)
+                return cb(new Error(util.format('command failed: %s', cmd)))
             edge.outFiles.forEach(function (file) {
                 st.log.update(file.path, st.imps[file.path])
             })
-            return cb(err)
+            return cb(null)
         })
-    }, 500)
+    }, 250)
+}
+
+function updateOutput(perc, label) {
+    readline.clearLine(process.stdout, 0)
+    readline.cursorTo(process.stdout, 0)
+    process.stdout.write(util.format('%s %s%  %s'
+      , 'Updating...'
+      , pad((perc * 100).toFixed(1), 5)
+      , label), 'utf8')
 }
 
 function pad(str, len) {
@@ -129,13 +143,13 @@ function pad(str, len) {
 }
 
 function makePercBar(perc, len) {
-    var str = '['
+    var str = '|'
     var i = 0
     for (; i < len && perc > i / len; ++i)
-        str += '#'
+        str += '='
     for (; i < len; ++i)
         str += ' '
-    return str + ']'
+    return str + '|'
 }
 
 function pathOf(file) {
