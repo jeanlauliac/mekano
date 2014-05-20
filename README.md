@@ -1,27 +1,27 @@
-neomake
-=======
+mekano
+======
 
 **Work in progress, this is very early.**
 
 Synopsis
 --------
 
-*neomake(1)* – maintain, update and regenerate groups of files.
+*mekano(1)* – maintain, update and regenerate groups of files.
 
-*neomake*:
+*mekano*:
 
   * is a make-like update tool: you have a bunch of files in some directories,
     you want to generate other files from them;
   * liberally aims to lessen the frustration that can occur working with GNU
     *make(1)* on small or medium projects;
-  * is balanced between speed and convenience;
+  * tries to be balanced between speed and convenience;
   * is not tied to any specific technology and may be used to compile C/C++,
     build a web application Javascript/CSS assets, or brew your coffee.
 
 Example
 -------
 
-In `./Neomakefile`:
+In `./Mekanofile`:
 
     bin = `node_module/.bin`;
 
@@ -40,20 +40,20 @@ In `./Neomakefile`:
 In your preferred shell:
 
     $ ls
-    Neomakefile   source
+    Mekanofile    source
 
-    $ neomake update
-    [        ]   0.0%   Coffee source/foo.coffee -> build/foo.js
-    [##      ]  25.0%   Coffee source/bar.coffee -> build/bar.js
-    [####    ]  50.0%   Concat build/foo.js build/bar.js -> dist/concat.js
-    [######  ]  75.0%   Minify dist/concat.js -> dist/concat.min.js
-    [########] 100.0%   Updated.
+    $ mekano update
+    Updating...  25.0%   Coffee source/foo.coffee -> build/foo.js
+    Updating...  50.0%   Coffee source/bar.coffee -> build/bar.js
+    Updating...  75.0%   Concat build/foo.js build/bar.js -> dist/concat.js
+    Updating... 100.0%   Minify dist/concat.js -> dist/concat.min.js
+    Done.
 
-    $ neomake update
+    $ mekano update
     Everything is up to date.
 
     $ ls
-    Neomakefile   source  build   dist
+    Mekanofile    source      build       dist        .mekano
 
     $ ls dist
     concat.js   concat.min.js
@@ -61,7 +61,7 @@ In your preferred shell:
 Description
 -----------
 
-*neomake* is a general-purpose update tool. It examines changes made and updates
+*mekano* is a general-purpose update tool. It examines changes made and updates
 derived files, called the targets, from the files they are derived, called the
 prerequisites. Typical cases include (non-exhaustive):
 
@@ -69,24 +69,24 @@ prerequisites. Typical cases include (non-exhaustive):
   * linking a group of object files to a single binary;
   * transpiling a plain JavaScript to a minified JavaScript.
 
-A description file (called neomakefile) contains a description of the
+A description file (called mekanofile) contains a description of the
 relationships between files, and the commands that need to be executed to update
 the targets and reflect changes in their prerequisites.
 
-*neomake* focuses on correctness rather than other factors like speed. It
+*mekano* focuses on correctness rather than other factors like speed. It
 properly takes account of removed and added files; tracks command-line changes;
 automatically create output directories; and provides sane semantics for
 dependency definitions. This tool is largely inspired by the UNIX *make(1)*
 utility, of which it modestly tries to be a 21th-century alternative.
 
-*neomake* only knows how to update files. It is not well suited for 'tasks' (eg.
+*mekano* only knows how to update files. It is not well suited for 'tasks' (eg.
 'test', 'publish'). Plain scripts are probably a better idea (eg. sh, JS,
 python) for those.
 
-The neomakefile is generally meant to be written by hand, but there is very
+The mekanofile is generally meant to be written by hand, but there is very
 little support for build-time decision-making (no 'if', no macros). However, you
 can easily use a dedicaced macro or procedural language to generate the
-neomakefile.
+mekanofile.
 
 This specific implementation is made with JavaScript on top of Node.js,
 but is usable for any purpose, from C/C++ compilation to web assets build.
@@ -95,26 +95,26 @@ Node.js makes it easier to be multiplatform.
 Install
 -------
 
-    npm install neomake
+    npm install mekano
 
-The tool will be available in `node_modules/.bin/neomake`. It is not recommended
+The tool will be available in `node_modules/.bin/mekano`. It is not recommended
 to install it globally, because different projects may need different versions.
 This allows the project to evolve faster and introduce breaking changes.
 
 To avoid typing the path everytime when installed locally, one decent solution
-is to create an alias, if your shell supports it:
+is to create an alias, if your shell supports it. For example:
 
-    $ alias neo=node_modules/.bin/neomake
+    $ alias mk=node_modules/.bin/mekano
 
 If you later forget to `npm install` a project, your shell will just tell you:
 
-    $ neo
-    bash: no such file or directory: node_modules/.bin/neomake
+    $ mk update
+    bash: no such file or directory: node_modules/.bin/mekano
 
 Usage
 -----
 
-    neomake <command> [options] [macro=value...] [target_name...]
+    mekano <command> [options] [macro=value...] [target_name...]
 
 Commands:
 
@@ -132,13 +132,13 @@ Commands:
   * **clean** Remove the specified and intermediary targets. Options:
       * **-n, --dry-run** Output files to be removed. No file is removed.
   * **aliases** Display a list of the defined aliases.
-  * **trace** Display the neomakefile interpretation. Options:
+  * **trace** Display the mekanofile interpretation. Options:
       * **-d, --dot** Output the file graph in the graphviz dot format.
-  * **help** Display neomake own help.
+  * **help** Display mekano own help.
 
 General options:
 
-  * **-f, --file** *neomakefile* Specify a different neomakefile. If '-' is
+  * **-f, --file** *mekanofile* Specify a different mekanofile. If '-' is
     specified, the standard input is used.
   * **-s, --silent** Be silent: don't write executed commands.
   * **-F, --force** Force things, like overwriting modified files. Dangerous.
@@ -146,8 +146,8 @@ General options:
 Macros and target names can be mixed on the command-line, but targets are always
 evaluated last.
 
-Without the option **-f**, *neomake* looks in sequence for the files
-**./neomake** and **./Neomake**. The first found is read.
+Without the option **-f**, *mekano* looks in sequence for the files
+**./Mekano** and **./mekano**. The first found is read.
 
 Signals
 -------
@@ -158,13 +158,13 @@ targets being processed are removed and the tool returns.
 Syntax
 ------
 
-A neomakefile can contain recipes, relations, and binds. Comments start with
+A mekanofile can contain recipes, relations, and binds. Comments start with
 `#`, and end with the next new line. Whitespace is never significant is all
 other cases; that is why statements must be terminated with `;`.
 
     unit = { recipe | relation | bind }
 
-The golden rule when writing a neomakefile is that **order does not matter**.
+The golden rule when writing a mekanofile is that **order does not matter**.
 Whatever the ordering of recipes, relations and binds is, the interpretation
 will always be the same; even if glob patterns are involved. This makes the
 syntax purely declarative.
@@ -201,7 +201,7 @@ A recipe can also bind local values with braces, for example:
 
 Command lines are evaluated by the local shell, typically with `sh -c`.
 'UpperCamel' case is suggested for naming recipes. Recipes can appear anywhere
-in the neomakefile, either after or before the relations referring to it.
+in the mekanofile, either after or before the relations referring to it.
 
 ### Relations
 
@@ -240,7 +240,7 @@ is equivalent to:
 
 #### Transformations
 
-There are two kind of transformations with *neomake*:
+There are two kind of transformations with *mekano*:
 
   * **plain** transformations noted with a simple arrow '->'. In this case,
     the recipe is invoked with all the input files, and is assumed to produce
@@ -258,13 +258,13 @@ There are two kind of transformations with *neomake*:
 Globbing patterns can appear both as prerequisites and targets, but yield
 different results. Prerequisite patterns expand in two steps:
 
-  * First, *neomake* looks for existing files matching the pattern. Those are
+  * First, *mekano* looks for existing files matching the pattern. Those are
     the original sources.
   * Then, it looks for other relations' targets matching the pattern. Those are
     intermediate files.
 
 Target patterns always expand as a result of the prerequisites. For each
-prerequisite found, *neomake* performs a transposition with the rules below:
+prerequisite found, *mekano* performs a transposition with the rules below:
 
   * the `**` path(s) is transfered to the corresponding `**`;
   * the `*` pathname(s) is transfered to the corresponding `*`.
@@ -287,21 +287,21 @@ values with `$name` or `$(name)`. Example:
     bin = `node_module/.bin`;
     coffee = `$bin/coffee`;
 
-A bound value is available anywhere in the neomakefile, even before the
+A bound value is available anywhere in the mekanofile, even before the
 declaration.
 
 <!---
 ### Directives
 
-`require <name>` imports another neomakefile recipes, relations, and values.
-'name' is either a path, or an identifier; in this case *neomake* import the
+`require <name>` imports another mekanofile recipes, relations, and values.
+'name' is either a path, or an identifier; in this case *mekano* import the
 'main' file specified in `node_modules/<name>/package.json`.
 -->
 
 File update
 -----------
 
-Once the neomakefile has been interpreted, *neomake* executes the steps below.
+Once the mekanofile has been interpreted, *mekano* executes the steps below.
 
   * Determine the hierarchy of prerequisites involved to update the specified
     targets.
@@ -312,11 +312,32 @@ Once the neomakefile has been interpreted, *neomake* executes the steps below.
   * Invoke recipes in order to update files. When possible, recipes are
     called asynchronously to make the update faster.
 
-Any output directory containing targets is automatically created by *neomake*
+Any output directory containing targets is automatically created by *mekano*
 during the update.
 
 Trivia
 ------
+
+### Why using this instead of make?
+
+  * It is simpler to set up transformation of multiple files, with no need to
+    write a list of files or use macros like `$(wildcard *.foo)`;
+  * directories are handled automatically;
+  * it detects command line changes;
+  * is gives more 'sane' and strict semantics, like values instead of macros,
+    reducing error risks.
+
+### Why using this instead of grunt?
+
+  * Minimal updates: files that did not change do not trigger update;
+  * no plugin system, you can use tools from any package, in any version; 'less
+    is more' applies pretty well to this case.
+
+### Why *not* using mekano?
+
+  * too high-level, you have specific dependency needs;
+  * no logic, no 'if';
+  * might be too slow for medium or large projects.
 
 ### Why not reusing the make syntax?
 
@@ -329,7 +350,7 @@ The classic *make* syntax "targets: prerequisites" is not employed because:
 
 ### Shout out
 
-To the masters from which *neomake* is inspired:
+To the masters from which *mekano* is inspired:
 
   * the historic [GNU make](http://www.gnu.org/software/make/manual/make.html);
   * the super-fast [Ninja](http://martine.github.io/ninja/);
