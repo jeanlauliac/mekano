@@ -53,6 +53,7 @@
     "gaze": "^0.6.4",
     "glob": "^3.2.9",
     "minimatch": "^0.3.0",
+    "mkdirp": "^0.5.0",
     "murmurhash-js": "^1.0.0",
     "nopt": "^2.2.1",
     "slide": "^1.1.5"

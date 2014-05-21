@@ -5,6 +5,8 @@ var util = require('util')
 var fs = require('fs')
 var os = require('os')
 var glob = require('glob')
+var path = require('path')
+var mkdirp = require('mkdirp')
 var readline = require('readline')
 var exec = require('child_process').exec
 var EventEmitter = require('events').EventEmitter
@@ -27,8 +29,11 @@ function update(opts, cb) {
     var ev = new EventEmitter()
     openSomeInput(opts.file, function (err, input, filePath) {
         if (err) return cb(err)
-        updateInput(input, filePath, cb).on('error', function (err) {
-            ev.emit('error', err)
+        mkdirp('.mekano', function (err) {
+            if (err) return cb(err)
+            updateInput(input, filePath, cb).on('error', function (err) {
+                ev.emit('error', err)
+            })
         })
     })
     return ev
@@ -88,7 +93,8 @@ function updateGraph(log, scope, recipes, graph, cb) {
             console.log('Everything is up to date.')
             return cb(null)
         }
-        var st = {cmds: cmds, edges: edges, runCount: 0, log: log, imps: imps}
+        var st = {cmds: cmds, edges: edges, runCount: 0, log: log
+                , imps: imps, dirs: {}}
         var re = queuedFnOf(runEdge.bind(null, st), os.cpus().length)
         updateOutput(0, '')
         runEdges(edges, re, function (err) {
@@ -103,7 +109,8 @@ function updateGraph(log, scope, recipes, graph, cb) {
 
 function runEdge(st, edge, cb) {
     var cmd = st.cmds[edge.index]
-    setTimeout(function() {
+    mkEdgeDirs(st, edge, function (err) {
+        if (err) return cb(err)
         exec(cmd, function (err, stdout, stderr) {
             if (!err) st.runCount++
             var perc = (st.runCount / st.edges.length)
@@ -125,7 +132,21 @@ function runEdge(st, edge, cb) {
             })
             return cb(null)
         })
-    }, 250)
+    })
+}
+
+function mkEdgeDirs(st, edge, cb) {
+    ;(function next(i) {
+        if (i >= edge.outFiles.length) return cb(null)
+        var file = edge.outFiles[i]
+        var dir = path.dirname(file.path)
+        if (st.dirs.hasOwnProperty(dir)) return next(i + 1)
+        mkdirp(path.dirname(file.path), function (err) {
+            if (err) return cb(err)
+            st.dirs[dir] = true
+            return next(i + 1)
+        })
+    })(0)
 }
 
 function updateOutput(perc, label) {
