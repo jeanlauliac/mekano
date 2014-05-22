@@ -97,6 +97,6 @@ test('read.sortTranss() cycles', function (t) {
 })
 
 function tokenOf(type, value, l) {
-    var loc = l ? new Location(l, 1) : new Location(1, 1)
-    return new Token(loc, type, value)
+    var loc = l ? new Location(l, 1) : null
+    return new Token(type, value, loc)
 }

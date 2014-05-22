@@ -6,17 +6,13 @@ var lex = require('../../lib/read/lex')
 var parse = require('../../lib/read/parse')
 var Scope = require('../../lib/scope')
 
-var TRACE = process.env.TRACE === '1'
-
 testParse('recipe', 'Foo: `beep`;', function (t, unit) {
     var r = unit.recipes['Foo']
-    t.equal(r.name, 'Foo')
     t.equal(r.command.expand(new Scope()), 'beep')
 })
 
 testParse('bind', 'foo = `beep`;', function (t, unit) {
     var b = unit.binds['foo']
-    t.equal(b.name, 'foo')
     t.equal(b.value.expand(new Scope()), 'beep')
 })
 
@@ -81,8 +77,7 @@ testParse('relation alias', 'a.out :: all `test`;'
 function testParse(name, str, cb) {
     test('read.parse() ' + name, function (t) {
         var ss = new StringStream(str)
-        parse(ss.pipe(lex()), {trace: TRACE}, function (err, unit) {
-            t.error(err)
+        parse(ss.pipe(lex())).on('finish', function (unit) {
             cb(t, unit)
             t.end()
         })

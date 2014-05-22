@@ -44,7 +44,7 @@ testLex('relation', './foo\n    Recipe => ./bar', [
 ])
 
 function tokenOf(l, c, type, value) {
-    return new Token(new Location(l, c), type, value)
+    return new Token(type, value, new Location(l, c))
 }
 
 function testLex(name, str, tokens) {

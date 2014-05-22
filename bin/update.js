@@ -21,18 +21,28 @@ var identify = require('../lib/update/identify')
 var runEdges = require('../lib/update/run-edges')
 var Scope = require('../lib/scope')
 
-var DEFAULT_PATHS = ['Neomakefile', 'neomakefile']
+var DEFAULT_PATHS = ['Mekanofile', 'mekanofile']
 var LOG_PATH = '.mekano/log.json'
-var NO_MAKEFILE = 'Neomakefile not found'
+var NO_MANIFEST = 'Mekanofile not found'
 
-function update(opts, cb) {
+function update(opts) {
     var ev = new EventEmitter()
     openSomeInput(opts.file, function (err, input, filePath) {
-        if (err) return cb(err)
+        if (err) {
+            ev.emit('error', err)
+            ev.emit('finish')
+        }
         mkdirp('.mekano', function (err) {
-            if (err) return cb(err)
-            updateInput(input, filePath, cb).on('error', function (err) {
+            if (err) {
                 ev.emit('error', err)
+                ev.emit('finish')
+            }
+            updateInput(input, filePath).on('error', function (err) {
+                ev.emit('error', err)
+            }).on('warning', function (err) {
+                ev.emit('warning', err)
+            }).on('finish', function () {
+                ev.emit('finish')
             })
         })
     })
@@ -43,7 +53,7 @@ function openSomeInput(filePath, cb) {
     if (filePath === '-') return cb(null, process.stdin, '<stdin>')
     if (filePath) return openInput(filePath, cb)
     ;(function next(i) {
-        if (i >= DEFAULT_PATHS.length) return cb(new Error(NO_MAKEFILE))
+        if (i >= DEFAULT_PATHS.length) return cb(new Error(NO_MANIFEST))
         openInput(DEFAULT_PATHS[i], function (err, stream) {
             if (err) return next(i + 1)
             return cb(null, stream, DEFAULT_PATHS[i])
@@ -57,52 +67,68 @@ function openInput(filePath, cb) {
     stream.on('error', function (err) { return cb(err) })
 }
 
-function updateInput(input, filePath, cb) {
-    var ev = read(input, function (err, transs, unit) {
-        if (err) {
-            err.filePath = filePath
-            err.message = util.format('%s: %s', filePath, err.message)
-            return cb(err)
-        }
+function updateInput(input, filePath) {
+    var errored = false
+    var ev = new EventEmitter()
+    read(input).on('error', function (err) {
+        err.filePath = filePath
+        ev.emit('error', err)
+        errored = true
+    }).on('warning', function (err) {
+        err.filePath = filePath
+        ev.emit('warning', err)
+    }).on('finish', function (transs, unit) {
+        if (errored) return ev.emit('finish')
         Log.fromStream(fs.createReadStream(LOG_PATH), function (err, log) {
             if (err) log = new Log()
             var scope = Scope.fromBinds(unit.binds)
             map(glob, log, transs, function (err, graph) {
-                if (err) return cb(err)
-                updateGraph(log, scope, unit.recipes, graph, function (err) {
-                    log.save(fs.createWriteStream(LOG_PATH)).end(function () {
-                        return cb(err)
-                    })
-                }).on('error', function (err) {
+                if (err) {
                     ev.emit('error', err)
-                })
+                    return ev.emit('finish')
+                }
+                var errored = false
+                updateGraph(log, scope, unit.recipes, graph)
+                    .on('error', function (err) {
+                        ev.emit('error', err)
+                        errored = true
+                    }).on('finish', function () {
+                        log.save(fs.createWriteStream(LOG_PATH))
+                            .end(function () {
+                                ev.emit('finish')
+                            })
+                    })
             })
         })
     })
     return ev
 }
 
-function updateGraph(log, scope, recipes, graph, cb) {
+function updateGraph(log, scope, recipes, graph) {
     var files = sort(graph.files)
     var cmds = expandCmds(scope, recipes, graph.edges)
     var ev = new EventEmitter()
     imprint(fs, files, cmds, function (err, imps) {
-        if (err) return cb(err)
+        if (err) { ev.emit('error'); return ev.emit('finish') }
         var edges = identify(log, files, imps)
         if (edges.length === 0) {
             console.log('Everything is up to date.')
-            return cb(null)
+            return ev.emit('finish')
         }
         var st = {cmds: cmds, edges: edges, runCount: 0, log: log
                 , imps: imps, dirs: {}}
         var re = queuedFnOf(runEdge.bind(null, st), os.cpus().length)
         updateOutput(0, '')
-        runEdges(edges, re, function (err) {
+        var errored = false
+        runEdges(edges, re).on('finish', function () {
             console.log()
-            if (err) return cb(err)
-            console.log('Done.')
-            return cb(null)
-        }).on('error', function (err) { ev.emit('error', err) })
+            if (!errored) console.log('Done.')
+            ev.emit('finish')
+        }).on('error', function (err) {
+            console.log()
+            errored = true
+            ev.emit('error', err)
+        })
     })
     return ev
 }

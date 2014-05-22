@@ -10,13 +10,11 @@ var RES = ['foo.o', 'bar.o', 'a.out']
 
 test('update.runEdges()', function (t) {
     var i = 0
+    t.plan(3)
     var runEdge = function (edge, cb) {
         t.equal(edge.outFiles[0].path, RES[i])
         process.nextTick(cb.bind(null, null))
         i++
     }
-    runEdges(TEST_EDGES, runEdge, function (err) {
-        t.error(err)
-        t.end()
-    })
+    runEdges(TEST_EDGES, runEdge).on('finish', function () {})
 })

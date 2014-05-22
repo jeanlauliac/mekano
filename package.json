@@ -20,6 +20,8 @@
   },
   "keywords": [
     "make",
+    "makefile",
+    "mekafile",
     "build",
     "system",
     "ninja",
@@ -31,11 +33,14 @@
     "minify",
     "compile",
     "transpile",
+    "link",
     "tool",
     "jake",
     "rake",
     "cake",
-    "cli"
+    "cli",
+    "asset",
+    "pipeline"
   ],
   "author": "Jean Lauliac <jean@lauliac.com>",
   "license": "ISC",
@@ -50,6 +55,7 @@
   "dependencies": {
     "abbrev": "^1.0.5",
     "concat-stream": "^1.4.5",
+    "extsprintf": "^1.0.3",
     "gaze": "^0.6.4",
     "glob": "^3.2.9",
     "minimatch": "^0.3.0",

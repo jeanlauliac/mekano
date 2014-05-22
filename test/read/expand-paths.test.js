@@ -5,7 +5,6 @@ var expandPaths = require('../../lib/read/expand-paths')
 var ast = require('../../lib/read/ast')
 var interRep = require('../../lib/read/inter-rep')
 var Token = require('../../lib/read/token.js')
-var Location = require('../../lib/read/location.js')
 
 var TEST_RELS = [
     new ast.Relation([
@@ -40,5 +39,5 @@ test('read.expandPaths() ', function (t) {
 })
 
 function tokenOf(type, value) {
-    return new Token(new Location(1, 1), type, value)
+    return new Token(type, value)
 }

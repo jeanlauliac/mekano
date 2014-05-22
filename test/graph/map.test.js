@@ -92,7 +92,7 @@ test('graph.map() multi', function (t) {
 })
 
 function tokenOf(type, value) {
-    return new Token(new Location(1, 1), type, value)
+    return new Token(type, value)
 }
 
 function testGlob(pattern, opts, cb) {
