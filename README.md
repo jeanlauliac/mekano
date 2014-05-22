@@ -3,7 +3,8 @@ mekano
 
 [![Build Status](https://travis-ci.org/jeanlauliac/mekano.svg?branch=master)](https://travis-ci.org/jeanlauliac/mekano)
 
-**Work in progress, this is very early.**
+**This is still an alpha version of the tool, keep in mind the current version
+is not feature-complete. Work is in progress toward that goal.**
 
 Synopsis
 --------
@@ -12,41 +13,45 @@ Synopsis
 
 *mekano*:
 
-  * is a make-like update tool: you have a bunch of files in some directories,
-    you want to generate other files from them;
-  * liberally aims to lessen the frustration that can occur working with GNU
+  * is a **make-like update tool**: you have a bunch of files in some
+    directories, you want to **generate other files** from them, **fast** (no
+    unnecessary work);
+  * liberally aims to **lessen the frustration** that can occur working with GNU
     *make(1)* on small or medium projects;
-  * tries to be balanced between speed and convenience;
-  * is not tied to any specific technology and may be used to compile C/C++,
-    build a web application Javascript/CSS assets, or brew your coffee.
+  * tries to be balanced between **speed and convenience**;
+  * works **best** with a **powerful shell** (like bash & co.), that it does not
+    supplant;
+  * is **not** tied to any **specific technology** and may be used to compile
+    C/C++, build a web application Javascript/CSS assets, or **brew your
+    coffee**.
 
 Example
 -------
 
 In `./Mekanofile`:
 
-    bin = `node_module/.bin`;
+    bin = `node_modules/.bin`;
 
     Concat: `cat $in > $out`;
-    Coffee: `$bin/coffee $in > $out`;
-    Minify: `$bin/minify < $in > $out`;
+    Coffee: `$bin/coffee -cp $in > $out`;
+    Minify: `$bin/uglifyjs < $in > $out`;
 
-    source/**/*.coffee
+    src/**/*.coffee
         Coffee => build/**/*.js
         Concat -> dist/concat.js;
 
     dist/*.js
         Minify => dist/*.min.js
-        :: all `the minified JS`;
+        :: all `Update all files`;
 
 In your preferred shell:
 
     $ ls
-    Mekanofile    source
+    Mekanofile    src
 
     $ mekano update
-    Updating...  25.0%   Coffee source/foo.coffee -> build/foo.js
-    Updating...  50.0%   Coffee source/bar.coffee -> build/bar.js
+    Updating...  25.0%   Coffee src/foo.coffee -> build/foo.js
+    Updating...  50.0%   Coffee src/bar.coffee -> build/bar.js
     Updating...  75.0%   Concat build/foo.js build/bar.js -> dist/concat.js
     Updating... 100.0%   Minify dist/concat.js -> dist/concat.min.js
     Done.
@@ -55,7 +60,7 @@ In your preferred shell:
     Everything is up to date.
 
     $ ls
-    Mekanofile    source      build       dist        .mekano
+    Mekanofile    src      build       dist        .mekano
 
     $ ls dist
     concat.js   concat.min.js
@@ -75,24 +80,27 @@ A description file (called mekanofile) contains a description of the
 relationships between files, and the commands that need to be executed to update
 the targets and reflect changes in their prerequisites.
 
-*mekano* focuses on correctness rather than other factors like speed. It
+*mekano* focuses above all on correctness and convenience, then speed. It
 properly takes account of removed and added files; tracks command-line changes;
 automatically create output directories; and provides sane semantics for
 dependency definitions. This tool is largely inspired by the UNIX *make(1)*
 utility, of which it modestly tries to be a 21th-century alternative.
 
-*mekano* only knows how to update files. It is not well suited for 'tasks' (eg.
-'test', 'publish'). Plain scripts are probably a better idea (eg. sh, JS,
-python) for those.
+*mekano* only knows how to update files. It is not well suited for so-called
+'tasks' (eg. 'test', 'publish'). Plain scripts are probably a better idea (with
+bash, Javascript, Python…) for those. Using
+[npm-scripts](https://www.npmjs.org/doc/misc/npm-scripts.html) is suggested
+as well.
 
-The mekanofile is generally meant to be written by hand, but there is very
-little support for build-time decision-making (no 'if', no macros). However, you
-can easily use a dedicaced macro or procedural language to generate the
-mekanofile.
+The mekanofile is generally meant to be written by hand, but there is, for now,
+very little support for build-time decision-making (no 'if', no macros).
+However, you can easily use a dedicaced macro or procedural language to generate
+the mekanofile, like [m4](http://www.gnu.org/software/m4/manual/m4.html),
+Python, Javascript…
 
-This specific implementation is made with JavaScript on top of Node.js,
-but is usable for any purpose, from C/C++ compilation to web assets build.
-Node.js makes it easier to be multiplatform.
+This specific implementation is made with JavaScript on top of Node.js, but keep
+in mind it is usable for any purpose, from C/C++ compilation to web assets
+build. Node.js just makes it easier to be multiplatform.
 
 Install
 -------
