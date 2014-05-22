@@ -97,13 +97,15 @@ Node.js makes it easier to be multiplatform.
 Install
 -------
 
+**Important:** you need node v0.10 or higher to run this program.
+
     npm install mekano
 
-The tool will be available in `node_modules/.bin/mekano`. It is not recommended
-to install it globally, because different projects may need different versions.
-This allows the project to evolve faster and introduce breaking changes.
+The tool will be available as `node_modules/.bin/mekano`. It is not recommended
+to install it globally, because different projects may need different major
+and incompatible versions.
 
-To avoid typing the path everytime when installed locally, one decent solution
+To avoid typing the path every time when installed locally, one decent solution
 is to create an alias, if your shell supports it. For example:
 
     $ alias mk=node_modules/.bin/mekano

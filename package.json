@@ -63,5 +63,8 @@
     "murmurhash-js": "^1.0.0",
     "nopt": "^2.2.1",
     "slide": "^1.1.5"
+  },
+  "engines": {
+    "node": ">=0.10"
   }
 }
