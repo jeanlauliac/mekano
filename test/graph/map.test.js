@@ -4,7 +4,6 @@ var test = require('tape')
 var map = require('../../lib/graph/map')
 var interRep = require('../../lib/read/inter-rep')
 var Token = require('../../lib/read/token.js')
-var Location = require('../../lib/read/location.js')
 var Log = require('../../lib/update/log')
 
 var TEST_LOG = new Log()
@@ -24,8 +23,8 @@ var TEST_TRANSS = [
 ]
 
 test('graph.map() simple', function (t) {
-    map(testGlob, TEST_LOG, TEST_TRANSS, function testGraph(err, graph) {
-        t.error(err)
+    var ev = map(testGlob, TEST_LOG, TEST_TRANSS)
+    ev.on('finish', function testGraph(graph) {
         var fooObj = graph.getFileByPath('foo.o')
         t.equal(fooObj.inEdge.inFiles.length, 1)
         t.equal(fooObj.inEdge.inFiles[0].path, 'foo.c')
@@ -51,8 +50,8 @@ var TEST_TRANSS_GLOBS = [
 ]
 
 test('graph.map() globs', function (t) {
-    map(testGlob, TEST_LOG, TEST_TRANSS_GLOBS, function testGraph(err, graph) {
-        t.error(err)
+    var ev = map(testGlob, TEST_LOG, TEST_TRANSS_GLOBS)
+    ev.on('finish', function testGraph(graph) {
         var fooObj = graph.getFileByPath('foo.o')
         t.equal(fooObj.inEdge.inFiles.length, 2)
         t.equal(fooObj.inEdge.inFiles[0].path, 'foo.c')
@@ -75,8 +74,8 @@ var TEST_TRANSS_MULTI = [
 ]
 
 test('graph.map() multi', function (t) {
-    map(testGlob, TEST_LOG, TEST_TRANSS_MULTI, function (err, graph) {
-        t.error(err)
+    var ev = map(testGlob, TEST_LOG, TEST_TRANSS_MULTI)
+    ev.on('finish', function (graph) {
         var fooObj = graph.getFileByPath('foo.o')
         t.equal(fooObj.inEdge.inFiles.length, 1)
         t.equal(fooObj.inEdge.inFiles[0].path, 'foo.c')

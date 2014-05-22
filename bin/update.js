@@ -82,16 +82,17 @@ function updateInput(input, filePath) {
         Log.fromStream(fs.createReadStream(LOG_PATH), function (err, log) {
             if (err) log = new Log()
             var scope = Scope.fromBinds(unit.binds)
-            map(glob, log, transs, function (err, graph) {
-                if (err) {
-                    ev.emit('error', err)
-                    return ev.emit('finish')
-                }
-                var errored = false
+            var errored = false
+            map(glob, log, transs).on('error', function (err) {
+                ev.emit('error', err)
+                errored = true
+            }).on('finish', function (graph) {
+                if (errored) return ev.emit('finish')
+                var errored2 = false
                 updateGraph(log, scope, unit.recipes, graph)
                     .on('error', function (err) {
                         ev.emit('error', err)
-                        errored = true
+                        errored2 = true
                     }).on('finish', function () {
                         log.save(fs.createWriteStream(LOG_PATH))
                             .end(function () {
@@ -109,7 +110,7 @@ function updateGraph(log, scope, recipes, graph) {
     var cmds = expandCmds(scope, recipes, graph.edges)
     var ev = new EventEmitter()
     imprint(fs, files, cmds, function (err, imps) {
-        if (err) { ev.emit('error'); return ev.emit('finish') }
+        if (err) { ev.emit('error', err); return ev.emit('finish') }
         var edges = identify(log, files, imps)
         if (edges.length === 0) {
             console.log('Everything is up to date.')
