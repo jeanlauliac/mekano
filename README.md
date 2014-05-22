@@ -1,4 +1,4 @@
-![mekano](https://cdn.mediacru.sh/0hecryCVR3vS.svg)
+# ![mekano](https://cdn.mediacru.sh/0hecryCVR3vS.svg)
 
 [![Build Status](https://travis-ci.org/jeanlauliac/mekano.svg?branch=master)](https://travis-ci.org/jeanlauliac/mekano)
 
