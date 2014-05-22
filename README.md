@@ -125,46 +125,48 @@ If you later forget to `npm install` a project, your shell will just tell you:
 Usage
 -----
 
-    mekano <command> [options] [macro=value...] [target_name...]
+    mekano <command> [options] [bind=value...] [target_name...]
 
 Commands:
 
-  * **update** Update the specified targets. All files are updated if no
-    target is specified. Options:
-      * **-k, --greedy** Continue to update feasible targets if an
-        error occurs. This is useful to get a maximum of errors at once.
-      * **-n, --dry-run** Output commands that would be run.
-        No target is updated.
-      * **-w, --watch** Watch files and update targets on prerequisite changes.
-        Keep running until a signal is caught.
+  * **update** Update the specified targets. The whole project is updated if no
+    target is specified.
+  * **watch** Keep updating files until a signal is caught. It watches files and
+    updates targets when prerequisites change.
   * **status** Display the modified files and dirty targets. No target is
     updated. If **--silent** is specified, return a zero exit value if the
     targets are up to date; otherwise, return 1.
-  * **clean** Remove the specified and intermediary targets. Options:
-      * **-n, --dry-run** Output files to be removed. No file is removed.
+  * **clean** Remove the specified and intermediary targets.
   * **aliases** Display a list of the defined aliases.
-  * **trace** Display the mekanofile interpretation. Options:
-      * **-d, --dot** Output the file graph in the graphviz dot format.
+  * **print** *type* Display the mekanofile interpretation. Types:
+      * **manifest** Output the mekanofile as it had been interpreted.
+      * **dot** Output the file graph in the graphviz dot format.
   * **help** Display mekano own help.
 
 General options:
 
+  * **-y, --shy** Stop an update as soon as an error occurs. By default,
+    the update continues to get a maximum of errors at once.
+  * **-n, --dry-run** Output commands that would be run. No target is updated
+    nor deleted.
   * **-f, --file** *mekanofile* Specify a different mekanofile. If '-' is
     specified, the standard input is used.
+  * **-r, --robot** Output machine-parseable text.
   * **-s, --silent** Be silent: don't write executed commands.
   * **-F, --force** Force things, like overwriting modified files. Dangerous.
 
-Macros and target names can be mixed on the command-line, but targets are always
-evaluated last.
+Binds and target names can be mixed on the command-line, but targets are always
+evaluated last. Values cannot refer to values inside the mekanofile, but the
+contrary is possible.
 
 Without the option **-f**, *mekano* looks in sequence for the files
-**./Mekano** and **./mekano**. The first found is read.
+**./Mekanofile** and **./mekanofile**. The first found is read.
 
-Signals
--------
+The standard output reports the recipes being executed as well as the completion
+percentage. The **-r** option makes the output easily parseable.
 
 If any of the SIGHUP, SIGTERM, SIGINT, and SIGQUIT signals is received, the
-targets being processed are removed and the tool returns.
+targets being processed are removed and the tool returns cleanly.
 
 Syntax
 ------
