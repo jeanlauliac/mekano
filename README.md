@@ -1,6 +1,8 @@
 mekano
 ======
 
+[![Build Status](https://travis-ci.org/jeanlauliac/mekano.svg?branch=master)](https://travis-ci.org/jeanlauliac/mekano)
+
 **Work in progress, this is very early.**
 
 Synopsis
