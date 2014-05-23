@@ -7,7 +7,6 @@ var os = require('os')
 var glob = require('glob')
 var path = require('path')
 var mkdirp = require('mkdirp')
-var readline = require('readline')
 var exec = require('child_process').exec
 var EventEmitter = require('events').EventEmitter
 var read = require('../lib/read')
@@ -21,6 +20,7 @@ var identify = require('../lib/update/identify')
 var runEdges = require('../lib/update/run-edges')
 var Scope = require('../lib/scope')
 var forwardEvents = require('../lib/forward-events')
+var Output = require('./output')
 
 var DEFAULT_PATHS = ['Mekanofile', 'mekanofile']
 var LOG_PATH = '.mekano/log.json'
@@ -121,16 +121,16 @@ function updateGraph(log, scope, recipes, graph) {
             return ev.emit('finish')
         }
         var st = {cmds: cmds, edges: edges, runCount: 0, log: log
-                , imps: imps, dirs: {}}
+                , imps: imps, dirs: {}, output: new Output()}
         var re = queuedFnOf(runEdge.bind(null, st), os.cpus().length)
-        updateOutput(0, '')
+        st.output.update(makeUpdateMessage(st))
         var errored = false
         runEdges(edges, re).on('finish', function () {
-            console.log()
+            st.output.endUpdate()
             if (!errored) console.log('Done.')
             ev.emit('finish')
         }).on('error', function (err) {
-            console.log()
+            st.output.endUpdate()
             errored = true
             ev.emit('error', err)
         })
@@ -144,15 +144,9 @@ function runEdge(st, edge, cb) {
         if (err) return cb(err)
         exec(cmd, function (err, stdout, stderr) {
             if (!err) st.runCount++
-            var perc = (st.runCount / st.edges.length)
-            readline.clearLine(process.stdout, 0)
-            readline.cursorTo(process.stdout, 0)
-            updateOutput(perc, util.format('%s %s -> %s'
-              , edge.trans.ast.recipeName
-              , edge.inFiles.map(pathOf).join(' ')
-              , edge.outFiles.map(pathOf).join(' ')))
+            st.output.update(makeUpdateMessage(st, edge))
             if (stdout.length > 0 || stderr.length > 0) {
-                process.stdout.write('\n')
+                st.output.endUpdate()
                 process.stdout.write(stdout)
                 process.stderr.write(stderr)
             }
@@ -180,28 +174,21 @@ function mkEdgeDirs(st, edge, cb) {
     })(0)
 }
 
-function updateOutput(perc, label) {
-    readline.clearLine(process.stdout, 0)
-    readline.cursorTo(process.stdout, 0)
-    process.stdout.write(util.format('%s %s%  %s'
-      , 'Updating...'
-      , pad((perc * 100).toFixed(1), 5)
-      , label), 'utf8')
+function makeUpdateMessage(st, edge) {
+    var perc = (st.runCount / st.edges.length)
+    var label = edge? util.format('%s %s -> %s'
+                          , edge.trans.ast.recipeName
+                          , edge.inFiles.map(pathOf).join(' ')
+                          , edge.outFiles.map(pathOf).join(' ')) : ''
+    var message = util.format('Updating... %s%  %s'
+                            , pad((perc * 100).toFixed(1), 5)
+                            , label)
+    return message
 }
 
 function pad(str, len) {
     while (str.length < len) str = ' ' + str
     return str
-}
-
-function makePercBar(perc, len) {
-    var str = '|'
-    var i = 0
-    for (; i < len && perc > i / len; ++i)
-        str += '='
-    for (; i < len; ++i)
-        str += ' '
-    return str + '|'
 }
 
 function pathOf(file) {
