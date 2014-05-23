@@ -20,6 +20,7 @@ var expandCmds = require('../lib/update/expand-cmds')
 var identify = require('../lib/update/identify')
 var runEdges = require('../lib/update/run-edges')
 var Scope = require('../lib/scope')
+var forwardEvents = require('../lib/forward-events')
 
 var DEFAULT_PATHS = ['Mekanofile', 'mekanofile']
 var LOG_PATH = '.mekano/log.json'
@@ -68,38 +69,44 @@ function openInput(filePath, cb) {
 }
 
 function updateInput(input, filePath) {
-    var errored = false
     var ev = new EventEmitter()
-    read(input).on('error', function (err) {
-        err.filePath = filePath
-        ev.emit('error', err)
-        errored = true
-    }).on('warning', function (err) {
-        err.filePath = filePath
-        ev.emit('warning', err)
-    }).on('finish', function (transs, unit) {
+    forwardEvents(ev, read(input), function transsReady(errored, transs, unit) {
         if (errored) return ev.emit('finish')
-        Log.fromStream(fs.createReadStream(LOG_PATH), function (err, log) {
-            if (err) log = new Log()
-            var scope = Scope.fromBinds(unit.binds)
-            var errored = false
-            map(glob, log, transs).on('error', function (err) {
-                ev.emit('error', err)
-                errored = true
-            }).on('finish', function (graph) {
-                if (errored) return ev.emit('finish')
-                var errored2 = false
-                updateGraph(log, scope, unit.recipes, graph)
-                    .on('error', function (err) {
-                        ev.emit('error', err)
-                        errored2 = true
-                    }).on('finish', function () {
-                        log.save(fs.createWriteStream(LOG_PATH))
-                            .end(function () {
-                                ev.emit('finish')
-                            })
-                    })
-            })
+        forwardEvents(ev, updateTranss(transs, unit), function transsUpdated() {
+            ev.emit('finish')
+        })
+    }, function (err) { err.filePath = filePath })
+    return ev
+}
+
+function updateTranss(transs, unit) {
+    var ev = new EventEmitter()
+    Log.fromStream(fs.createReadStream(LOG_PATH), function (err, log) {
+        if (err) log = new Log()
+        var scope
+        try { scope = Scope.fromBinds(unit.binds) }
+        catch (err) {
+            if (err.name !== 'BindError') throw err
+            ev.emit('error', err)
+            return ev.emit('finish')
+        }
+        var errored = false
+        map(glob, log, transs).on('error', function (err) {
+            ev.emit('error', err)
+            errored = true
+        }).on('finish', function (graph) {
+            if (errored) return ev.emit('finish')
+            var errored2 = false
+            updateGraph(log, scope, unit.recipes, graph)
+                .on('error', function (err) {
+                    ev.emit('error', err)
+                    errored2 = true
+                }).on('finish', function () {
+                    log.save(fs.createWriteStream(LOG_PATH))
+                        .end(function () {
+                            ev.emit('finish')
+                        })
+                })
         })
     })
     return ev
