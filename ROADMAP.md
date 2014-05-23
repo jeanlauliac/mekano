@@ -39,3 +39,10 @@ Fancy features to add:
     dependency files (eg. `gcc -MM`).
 
   * Using interpolation in path lists (targets or prerequisites).
+
+  * Implicit files:
+
+        src/**/*.coffee
+            Coffee => Concat -> dist/concat.js;
+
+    The compiled JS files, in this case, are auto-named and placed in .mekano/.

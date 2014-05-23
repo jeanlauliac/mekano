@@ -29,9 +29,9 @@ var NO_MANIFEST = 'Mekanofile not found'
 function update(opts) {
     var ev = new EventEmitter()
     openSomeInput(opts.file, function (err, input, filePath) {
-        if (err) return bailoutEv(err)
+        if (err) return bailoutEv(ev, err)
         mkdirp('.mekano', function (err) {
-            if (err) return bailoutEv(err)
+            if (err) return bailoutEv(ev, err)
             forwardEvents(ev, updateInput(input, filePath))
         })
     })
@@ -76,11 +76,8 @@ function updateTranss(transs, unit) {
         ev.emit('error', err)
         return ev.emit('finish')
     }
-    Log.fromStream(fs.createReadStream(LOG_PATH), function (err, log) {
-        if (err && err.code !== 'ENOENT') {
-            ev.emit('error', err)
-            return ev.emit('finish')
-        }
+    getLog(function (err, log) {
+        if (err) return bailoutEv(ev, err)
         if (err) log = new Log()
         var from = map(glob, log, transs)
         forwardEvents(ev, from, function graphMapped(errored, graph) {
@@ -97,12 +94,22 @@ function updateTranss(transs, unit) {
     return ev
 }
 
+function getLog(cb) {
+    Log.fromStream(fs.createReadStream(LOG_PATH), function (err, log) {
+        if (err && err.code !== 'ENOENT') return cb(err)
+        if (err) log = new Log()
+        log.refresh(function (err) {
+            return cb(err, log)
+        })
+    })
+}
+
 function updateGraph(log, scope, recipes, graph) {
     var files = sort(graph.files)
     var cmds = expandCmds(scope, recipes, graph.edges)
     var ev = new EventEmitter()
     imprint(fs, files, cmds, function (err, imps) {
-        if (err) return bailoutEv(err)
+        if (err) return bailoutEv(ev, err)
         var edges = identify(log, files, imps)
         if (edges.length === 0) {
             console.log('Everything is up to date.')
