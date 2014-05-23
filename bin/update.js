@@ -81,32 +81,25 @@ function updateInput(input, filePath) {
 
 function updateTranss(transs, unit) {
     var ev = new EventEmitter()
+    var scope
+    try { scope = Scope.fromBinds(unit.binds) }
+    catch (err) {
+        if (err.name !== 'BindError') throw err
+        ev.emit('error', err)
+        return ev.emit('finish')
+    }
     Log.fromStream(fs.createReadStream(LOG_PATH), function (err, log) {
         if (err) log = new Log()
-        var scope
-        try { scope = Scope.fromBinds(unit.binds) }
-        catch (err) {
-            if (err.name !== 'BindError') throw err
-            ev.emit('error', err)
-            return ev.emit('finish')
-        }
-        var errored = false
-        map(glob, log, transs).on('error', function (err) {
-            ev.emit('error', err)
-            errored = true
-        }).on('finish', function (graph) {
+        var from = map(glob, log, transs)
+        forwardEvents(ev, from, function graphMapped(errored, graph) {
             if (errored) return ev.emit('finish')
-            var errored2 = false
-            updateGraph(log, scope, unit.recipes, graph)
-                .on('error', function (err) {
-                    ev.emit('error', err)
-                    errored2 = true
-                }).on('finish', function () {
-                    log.save(fs.createWriteStream(LOG_PATH))
-                        .end(function () {
-                            ev.emit('finish')
-                        })
+            var from = updateGraph(log, scope, unit.recipes, graph)
+            forwardEvents(ev, from, function graphUpdated() {
+                var s = log.save(fs.createWriteStream(LOG_PATH))
+                s.end(function () {
+                    ev.emit('finish')
                 })
+            })
         })
     })
     return ev
