@@ -29,22 +29,10 @@ var NO_MANIFEST = 'Mekanofile not found'
 function update(opts) {
     var ev = new EventEmitter()
     openSomeInput(opts.file, function (err, input, filePath) {
-        if (err) {
-            ev.emit('error', err)
-            ev.emit('finish')
-        }
+        if (err) return bailoutEv(err)
         mkdirp('.mekano', function (err) {
-            if (err) {
-                ev.emit('error', err)
-                ev.emit('finish')
-            }
-            updateInput(input, filePath).on('error', function (err) {
-                ev.emit('error', err)
-            }).on('warning', function (err) {
-                ev.emit('warning', err)
-            }).on('finish', function () {
-                ev.emit('finish')
-            })
+            if (err) return bailoutEv(err)
+            forwardEvents(ev, updateInput(input, filePath))
         })
     })
     return ev
@@ -114,7 +102,7 @@ function updateGraph(log, scope, recipes, graph) {
     var cmds = expandCmds(scope, recipes, graph.edges)
     var ev = new EventEmitter()
     imprint(fs, files, cmds, function (err, imps) {
-        if (err) { ev.emit('error', err); return ev.emit('finish') }
+        if (err) return bailoutEv(err)
         var edges = identify(log, files, imps)
         if (edges.length === 0) {
             console.log('Everything is up to date.')
@@ -124,16 +112,11 @@ function updateGraph(log, scope, recipes, graph) {
                 , imps: imps, dirs: {}, output: new Output()}
         var re = queuedFnOf(runEdge.bind(null, st), os.cpus().length)
         st.output.update(makeUpdateMessage(st))
-        var errored = false
-        runEdges(edges, re).on('finish', function () {
+        forwardEvents(ev, runEdges(edges, re), function (errored) {
             st.output.endUpdate()
             if (!errored) console.log('Done.')
             ev.emit('finish')
-        }).on('error', function (err) {
-            st.output.endUpdate()
-            errored = true
-            ev.emit('error', err)
-        })
+        }, function () { st.output.endUpdate() })
     })
     return ev
 }
@@ -189,6 +172,11 @@ function makeUpdateMessage(st, edge) {
 function pad(str, len) {
     while (str.length < len) str = ' ' + str
     return str
+}
+
+function bailoutEv(ev, err) {
+    ev.emit('error', err)
+    ev.emit('finish')
 }
 
 function pathOf(file) {
