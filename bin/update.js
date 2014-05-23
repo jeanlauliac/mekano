@@ -89,6 +89,10 @@ function updateTranss(transs, unit) {
         return ev.emit('finish')
     }
     Log.fromStream(fs.createReadStream(LOG_PATH), function (err, log) {
+        if (err && err.code !== 'ENOENT') {
+            ev.emit('error', err)
+            return ev.emit('finish')
+        }
         if (err) log = new Log()
         var from = map(glob, log, transs)
         forwardEvents(ev, from, function graphMapped(errored, graph) {
