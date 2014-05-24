@@ -14,7 +14,7 @@ var KNOWN_OPTS = {
 }
 
 var SHORTHANDS = {
-    'f': ['--force'], 'n': ['--dry-run'], 's': ['--silent']
+    'f': ['--file'], 'n': ['--dry-run'], 's': ['--silent']
   , 'F': ['--force'], 'v': ['--version']
 }
 

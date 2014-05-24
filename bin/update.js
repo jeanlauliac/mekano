@@ -24,6 +24,7 @@ var Output = require('./output')
 
 var DEFAULT_PATHS = ['Mekanofile', 'mekanofile']
 var LOG_PATH = '.mekano/log.json'
+var NO_MANIFEST_FILE = 'no such manifest file `%s\''
 var NO_MANIFEST = 'Mekanofile not found'
 
 function update(opts) {
@@ -53,7 +54,11 @@ function openSomeInput(filePath, cb) {
 function openInput(filePath, cb) {
     var stream = fs.createReadStream(filePath)
     stream.on('open', function () { return cb(null, stream, filePath) })
-    stream.on('error', function (err) { return cb(err) })
+    stream.on('error', function (err) {
+        if (err.code === 'ENOENT')
+            err = new Error(util.format(NO_MANIFEST_FILE, filePath))
+        return cb(err)
+    })
 }
 
 function updateInput(input, filePath) {
