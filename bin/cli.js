@@ -33,15 +33,21 @@ function main() {
     }
     var ev = Commands[command](opts)
     var errored = false
+    var finished = false
     ev.on('error', function (err) {
         log('error', err)
         errored = true
     }).on('warning', function (err) {
         log('warning', err)
     }).on('finish', function () {
+        finished = true
         if (errored)
             process.exit(1)
         process.exit(0)
+    })
+    process.on('exit', function () {
+        if (!finished)
+            throw new Error('finish event not called; this is a bug!')
     })
 }
 
@@ -56,13 +62,10 @@ function log(type, err) {
 
 var Commands = {}
 Commands.update = require('./update')
-
-Commands.status = function () {
-
-}
+Commands.status = require('./status')
 
 Commands.clean = function () {
-
+    
 }
 
 Commands.aliases = function () {

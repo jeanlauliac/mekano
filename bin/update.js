@@ -13,16 +13,15 @@ var runEdges = require('../lib/update/run-edges')
 var forwardEvents = require('../lib/forward-events')
 var Output = require('./output')
 var readData = require('./read-data')
-
-var LOG_PATH = '.mekano/log.json'
+var common = require('./common')
 
 function update(opts) {
     var ev = new EventEmitter()
-    return forwardEvents(ev, readData(opts.file, LOG_PATH)
+    return forwardEvents(ev, readData(opts.file, common.LOG_PATH)
                        , function (errored, data) {
         if (errored) return ev.emit('finish')
         forwardEvents(ev, updateGraph(data), function graphUpdated() {
-            var s = data.log.save(fs.createWriteStream(LOG_PATH))
+            var s = data.log.save(fs.createWriteStream(common.LOG_PATH))
             s.end(function () {
                 ev.emit('finish')
             })
@@ -33,7 +32,7 @@ function update(opts) {
 function updateGraph(data) {
     var ev = new EventEmitter()
     if (data.edges.length === 0) {
-        console.log('Everything is up to date.')
+        console.log(common.EVERYTHING_UTD)
         process.nextTick(ev.emit.bind(null, 'finish'))
         return ev
     }
