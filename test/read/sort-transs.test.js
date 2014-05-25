@@ -3,20 +3,20 @@
 var test = require('tape')
 var interRep = require('../../lib/read/inter-rep')
 var sortTranss = require('../../lib/read/sort-transs')
-var Token = require('../../lib/read/token.js')
-var Location = require('../../lib/read/location.js')
+var ast = require('../../lib/read/ast')
+var Location = require('../../lib/read/location')
 
 var TEST_TRANSS = [
     new interRep.PlainTrans({multi: false}, [
-        tokenOf(Token.PATH, 'foo.o')
-      , tokenOf(Token.PATH, 'bar.o')
-    ], [tokenOf(Token.PATH, 'a.out')])
+        new ast.Ref(ast.Ref.PATH, 'foo.o')
+      , new ast.Ref(ast.Ref.PATH, 'bar.o')
+    ], [new ast.Ref(ast.Ref.PATH, 'a.out')])
   , new interRep.PlainTrans({multi: false}, [
-        tokenOf(Token.PATH, 'foo.c')
-    ], [tokenOf(Token.PATH, 'foo.o')])
+        new ast.Ref(ast.Ref.PATH, 'foo.c')
+    ], [new ast.Ref(ast.Ref.PATH, 'foo.o')])
   , new interRep.PlainTrans({multi:false}, [
-        tokenOf(Token.PATH, 'bar.c')
-    ], [tokenOf(Token.PATH, 'bar.o')])
+        new ast.Ref(ast.Ref.PATH, 'bar.c')
+    ], [new ast.Ref(ast.Ref.PATH, 'bar.o')])
 ]
 
 test('read.sortTranss() simple', function (t) {
@@ -30,13 +30,13 @@ test('read.sortTranss() simple', function (t) {
 
 var TEST_TRANSS_GLOBS = [
     new interRep.PlainTrans({multi:false}, [
-        tokenOf(Token.PATH_GLOB, '*.o')
-    ], [tokenOf(Token.PATH, 'a.out')])
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.o')
+    ], [new ast.Ref(ast.Ref.PATH, 'a.out')])
   , new interRep.PlainTrans({multi: false}, [
-        tokenOf(Token.PATH_GLOB, '*.c')
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.c')
     ], [
-        tokenOf(Token.PATH, 'foo.o')
-      , tokenOf(Token.PATH, 'bar.o')
+        new ast.Ref(ast.Ref.PATH, 'foo.o')
+      , new ast.Ref(ast.Ref.PATH, 'bar.o')
     ])
 ]
 
@@ -51,14 +51,14 @@ test('read.sortTranss() globs', function (t) {
 
 var TEST_TRANSS_MULTI = [
     new interRep.PlainTrans({multi: true}, [
-        tokenOf(Token.PATH_GLOB, '*.o')
-    ], [tokenOf(Token.PATH_GLOB, '*.a')])
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.o')
+    ], [new ast.Ref(ast.Ref.PATH_GLOB, '*.a')])
   , new interRep.PlainTrans({multi:true}, [
-        tokenOf(Token.PATH_GLOB, '*.y')
-    ], [tokenOf(Token.PATH_GLOB, 'flex/*.c')])
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.y')
+    ], [new ast.Ref(ast.Ref.PATH_GLOB, 'flex/*.c')])
   , new interRep.PlainTrans({multi:true}, [
-        tokenOf(Token.PATH_GLOB, '**/*.c')
-    ], [tokenOf(Token.PATH_GLOB, '**/*.o')])
+        new ast.Ref(ast.Ref.PATH_GLOB, '**/*.c')
+    ], [new ast.Ref(ast.Ref.PATH_GLOB, '**/*.o')])
 ]
 
 test('read.sortTranss() multi', function (t) {
@@ -72,18 +72,18 @@ test('read.sortTranss() multi', function (t) {
 
 var TEST_TRANSS_CYCLES = [
     new interRep.PlainTrans({multi: true}, [
-        tokenOf(Token.PATH_GLOB, '*.y', 1)
-      , tokenOf(Token.PATH_GLOB, '*.z', 7)
-    ], [tokenOf(Token.PATH_GLOB, '*.c', 2)])
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.y', l(1))
+      , new ast.Ref(ast.Ref.PATH_GLOB, '*.z', l(7))
+    ], [new ast.Ref(ast.Ref.PATH_GLOB, '*.c', l(2))])
   , new interRep.PlainTrans({multi:true}, [
-        tokenOf(Token.PATH_GLOB, '*.c', 3)
-    ], [tokenOf(Token.PATH_GLOB, '*.d', 4)])
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.c', l(3))
+    ], [new ast.Ref(ast.Ref.PATH_GLOB, '*.d', l(4))])
   , new interRep.PlainTrans({multi:true}, [
-        tokenOf(Token.PATH_GLOB, '*.d', 5)
-    ], [tokenOf(Token.PATH_GLOB, '*.y', 6)])
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.d', l(5))
+    ], [new ast.Ref(ast.Ref.PATH_GLOB, '*.y', l(6))])
   , new interRep.PlainTrans({multi:true}, [
-        tokenOf(Token.PATH_GLOB, '*.c', 8)
-    ], [tokenOf(Token.PATH_GLOB, '*.z', 9)])
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.c', l(8))
+    ], [new ast.Ref(ast.Ref.PATH_GLOB, '*.z', l(9))])
 ]
 
 test('read.sortTranss() cycles', function (t) {
@@ -96,7 +96,6 @@ test('read.sortTranss() cycles', function (t) {
     t.end()
 })
 
-function tokenOf(type, value, l) {
-    var loc = l ? new Location(l, 1) : null
-    return new Token(type, value, loc)
+function l(l) {
+    return new Location(l, 1)
 }

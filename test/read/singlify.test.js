@@ -3,20 +3,19 @@
 var test = require('tape')
 var singlify = require('../../lib/read/singlify')
 var interRep = require('../../lib/read/inter-rep')
-var Token = require('../../lib/read/token.js')
-var Location = require('../../lib/read/location.js')
+var ast = require('../../lib/read/ast')
 
 var TEST_RELS = [
     new interRep.ExpRelation([
-        tokenOf(Token.PATH, 'foo.c')
-      , tokenOf(Token.PATH, 'bar.c')
+        new ast.Ref(ast.Ref.PATH, 'foo.c')
+      , new ast.Ref(ast.Ref.PATH, 'bar.c')
     ], [
         new interRep.ExpTrans({recipeName: 'Compile'}, [
-            tokenOf(Token.PATH, 'foo.o')
-          , tokenOf(Token.PATH, 'bar.o')
+            new ast.Ref(ast.Ref.PATH, 'foo.o')
+          , new ast.Ref(ast.Ref.PATH, 'bar.o')
         ])
       , new interRep.ExpTrans({recipeName: 'Link'}, [
-            tokenOf(Token.PATH, 'a.out')
+            new ast.Ref(ast.Ref.PATH, 'a.out')
         ])
     ])
 ]
@@ -32,7 +31,3 @@ test('read.singlify() ', function (t) {
     t.equal(transs[1].targets[0].value, 'a.out')
     t.end()
 })
-
-function tokenOf(type, value) {
-    return new Token(type, value)
-}

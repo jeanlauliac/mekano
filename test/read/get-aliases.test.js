@@ -3,17 +3,16 @@
 var test = require('tape')
 var getAliases = require('../../lib/read/get-aliases')
 var ast = require('../../lib/read/ast')
-var Token = require('../../lib/read/token.js')
 
 var TEST_RELS = [
     new ast.Relation([
-        tokenOf(Token.PATH, 'foo.c')
-      , tokenOf(Token.PATH, 'bar.c')
+        new ast.Ref(ast.Ref.PATH, 'foo.c')
+      , new ast.Ref(ast.Ref.PATH, 'bar.c')
     ], [], new ast.Alias('cfiles'))
   , new ast.Relation([
-        tokenOf(Token.PATH, 'foo.c')
+        new ast.Ref(ast.Ref.PATH, 'foo.c')
     ], [
-        new ast.Trans('Link', false, [tokenOf(Token.PATH, 'a.out')])
+        new ast.Trans('Link', false, [new ast.Ref(ast.Ref.PATH, 'a.out')])
     ], new ast.Alias('all'))
 ]
 
@@ -28,7 +27,3 @@ test('read.getAliases() ', function (t) {
     t.equal(aliases['all'].refs[0].value, 'a.out')
     t.end()
 })
-
-function tokenOf(type, value) {
-    return new Token(type, value)
-}

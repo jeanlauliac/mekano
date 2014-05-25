@@ -4,24 +4,23 @@ var test = require('tape')
 var expandPaths = require('../../lib/read/expand-paths')
 var ast = require('../../lib/read/ast')
 var interRep = require('../../lib/read/inter-rep')
-var Token = require('../../lib/read/token.js')
 
 var TEST_RELS = [
     new ast.Relation([
-        tokenOf(Token.PATH, 'fizz.c')
-      , tokenOf(Token.IDENTIFIER, 'cfiles')
+        new ast.Ref(ast.Ref.PATH, 'fizz.c')
+      , new ast.Ref(ast.Ref.ALIAS, 'cfiles')
     ], [
-        new ast.Trans('Link', false, [tokenOf(Token.IDENTIFIER, 'outfile')])
+        new ast.Trans('Link', false, [new ast.Ref(ast.Ref.ALIAS, 'outfile')])
     ])
 ]
 
 var TEST_ALIASES = {
     cfiles: new interRep.Alias('cfiles', [
-        tokenOf(Token.PATH, 'foo.c')
-      , tokenOf(Token.PATH, 'bar.c')
+        new ast.Ref(ast.Ref.PATH, 'foo.c')
+      , new ast.Ref(ast.Ref.PATH, 'bar.c')
     ])
   , outfile: new interRep.Alias('outfile', [
-        tokenOf(Token.PATH, 'a.out')
+        new ast.Ref(ast.Ref.PATH, 'a.out')
     ])
 }
 
@@ -37,7 +36,3 @@ test('read.expandPaths() ', function (t) {
     t.equal(rels[0].transs[0].targets[0].value, 'a.out')
     t.end()
 })
-
-function tokenOf(type, value) {
-    return new Token(type, value)
-}

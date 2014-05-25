@@ -3,7 +3,7 @@
 var test = require('tape')
 var map = require('../../lib/graph/map')
 var interRep = require('../../lib/read/inter-rep')
-var Token = require('../../lib/read/token.js')
+var ast = require('../../lib/read/ast')
 var Log = require('../../lib/update/log')
 
 var TEST_LOG = new Log()
@@ -11,15 +11,15 @@ TEST_LOG.update('old.o', 42)
 
 var TEST_TRANSS = [
     new interRep.PlainTrans({multi: false}, [
-        tokenOf(Token.PATH, 'foo.c')
-    ], [tokenOf(Token.PATH, 'foo.o')])
+        new ast.Ref(ast.Ref.PATH, 'foo.c')
+    ], [new ast.Ref(ast.Ref.PATH, 'foo.o')])
   , new interRep.PlainTrans({multi:false}, [
-        tokenOf(Token.PATH, 'bar.c')
-    ], [tokenOf(Token.PATH, 'bar.o')])
+        new ast.Ref(ast.Ref.PATH, 'bar.c')
+    ], [new ast.Ref(ast.Ref.PATH, 'bar.o')])
   , new interRep.PlainTrans({multi: false}, [
-        tokenOf(Token.PATH, 'foo.o')
-      , tokenOf(Token.PATH, 'bar.o')
-    ], [tokenOf(Token.PATH, 'a.out')])
+        new ast.Ref(ast.Ref.PATH, 'foo.o')
+      , new ast.Ref(ast.Ref.PATH, 'bar.o')
+    ], [new ast.Ref(ast.Ref.PATH, 'a.out')])
 ]
 
 test('graph.map() simple', function (t) {
@@ -38,14 +38,14 @@ test('graph.map() simple', function (t) {
 
 var TEST_TRANSS_GLOBS = [
     new interRep.PlainTrans({multi: false}, [
-        tokenOf(Token.PATH_GLOB, '*.c')
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.c')
     ], [
-        tokenOf(Token.PATH, 'foo.o')
-      , tokenOf(Token.PATH, 'bar.o')
+        new ast.Ref(ast.Ref.PATH, 'foo.o')
+      , new ast.Ref(ast.Ref.PATH, 'bar.o')
     ])
   , new interRep.PlainTrans({multi:false}, [
-        tokenOf(Token.PATH_GLOB, '*.o')
-    ], [tokenOf(Token.PATH, 'a.out')])
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.o')
+    ], [new ast.Ref(ast.Ref.PATH, 'a.out')])
 
 ]
 
@@ -66,11 +66,11 @@ test('graph.map() globs', function (t) {
 
 var TEST_TRANSS_MULTI = [
     new interRep.PlainTrans({multi:true}, [
-        tokenOf(Token.PATH_GLOB, '*.c')
-    ], [tokenOf(Token.PATH_GLOB, '*.o')])
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.c')
+    ], [new ast.Ref(ast.Ref.PATH_GLOB, '*.o')])
   , new interRep.PlainTrans({multi: true}, [
-        tokenOf(Token.PATH_GLOB, '*.o')
-    ], [tokenOf(Token.PATH_GLOB, '*.a')])
+        new ast.Ref(ast.Ref.PATH_GLOB, '*.o')
+    ], [new ast.Ref(ast.Ref.PATH_GLOB, '*.a')])
 ]
 
 test('graph.map() multi', function (t) {
@@ -89,10 +89,6 @@ test('graph.map() multi', function (t) {
         t.end()
     })
 })
-
-function tokenOf(type, value) {
-    return new Token(type, value)
-}
 
 function testGlob(pattern, opts, cb) {
     if (typeof cb === 'undefined') {
