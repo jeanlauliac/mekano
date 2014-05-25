@@ -63,12 +63,13 @@ function openInput(filePath, cb) {
 
 function updateInput(input, filePath) {
     var ev = new EventEmitter()
+    var augmentError = function augmentError(err) { err.filePath = filePath }
     forwardEvents(ev, read(input), function transsReady(errored, transs, unit) {
         if (errored) return ev.emit('finish')
         forwardEvents(ev, updateTranss(transs, unit), function transsUpdated() {
             ev.emit('finish')
-        })
-    }, function (err) { err.filePath = filePath })
+        }, augmentError)
+    }, augmentError)
     return ev
 }
 
