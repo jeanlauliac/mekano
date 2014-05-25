@@ -9,20 +9,16 @@ var mkdirp = require('mkdirp')
 var exec = require('child_process').exec
 var EventEmitter = require('events').EventEmitter
 var queuedFnOf = require('../lib/queued-fn-of')
-var sort = require('../lib/update/sort')
-var imprint = require('../lib/update/imprint')
-var expandCmds = require('../lib/update/expand-cmds')
-var identify = require('../lib/update/identify')
 var runEdges = require('../lib/update/run-edges')
 var forwardEvents = require('../lib/forward-events')
 var Output = require('./output')
-var readGraph = require('./read-graph')
+var readData = require('./read-data')
 
 var LOG_PATH = '.mekano/log.json'
 
 function update(opts) {
     var ev = new EventEmitter()
-    return forwardEvents(ev, readGraph(opts.file, LOG_PATH)
+    return forwardEvents(ev, readData(opts.file, LOG_PATH)
                        , function (errored, data) {
         if (errored) return ev.emit('finish')
         forwardEvents(ev, updateGraph(data), function graphUpdated() {
@@ -35,31 +31,25 @@ function update(opts) {
 }
 
 function updateGraph(data) {
-    var files = sort(data.graph.files)
-    var cmds = expandCmds(data.scope, data.recipes, data.graph.edges)
     var ev = new EventEmitter()
-    imprint(fs, files, cmds, function (err, imps) {
-        if (err) return bailoutEv(ev, err)
-        var edges = identify(data.log, files, imps)
-        if (edges.length === 0) {
-            console.log('Everything is up to date.')
-            return ev.emit('finish')
-        }
-        var st = {cmds: cmds, edges: edges, runCount: 0, log: data.log
-                , imps: imps, dirs: {}, output: new Output()}
-        var re = queuedFnOf(runEdge.bind(null, st), os.cpus().length)
-        st.output.update(makeUpdateMessage(st))
-        forwardEvents(ev, runEdges(edges, re), function (errored) {
-            st.output.endUpdate()
-            if (!errored) console.log('Done.')
-            ev.emit('finish')
-        }, function () { st.output.endUpdate() })
-    })
-    return ev
+    if (data.edges.length === 0) {
+        console.log('Everything is up to date.')
+        process.nextTick(ev.emit.bind(null, 'finish'))
+        return ev
+    }
+    var st = {data: data, runCount: 0
+            , dirs: {}, output: new Output()}
+    var re = queuedFnOf(runEdge.bind(null, st), os.cpus().length)
+    st.output.update(makeUpdateMessage(st))
+    return forwardEvents(ev, runEdges(data.edges, re), function (errored) {
+        st.output.endUpdate()
+        if (!errored) console.log('Done.')
+        ev.emit('finish')
+    }, function () { st.output.endUpdate() })
 }
 
 function runEdge(st, edge, cb) {
-    var cmd = st.cmds[edge.index]
+    var cmd = st.data.cmds[edge.index]
     mkEdgeDirs(st, edge, function (err) {
         if (err) return cb(err)
         exec(cmd, function (err, stdout, stderr) {
@@ -73,7 +63,7 @@ function runEdge(st, edge, cb) {
             if (err)
                 return cb(new Error(util.format('command failed: %s', cmd)))
             edge.outFiles.forEach(function (file) {
-                st.log.update(file.path, st.imps[file.path])
+                st.data.log.update(file.path, st.data.imps[file.path])
             })
             return cb(null)
         })
@@ -95,7 +85,7 @@ function mkEdgeDirs(st, edge, cb) {
 }
 
 function makeUpdateMessage(st, edge) {
-    var perc = (st.runCount / st.edges.length)
+    var perc = (st.runCount / st.data.edges.length)
     var label = edge? util.format('%s %s -> %s'
                           , edge.trans.ast.recipeName
                           , edge.inFiles.map(pathOf).join(' ')
@@ -109,11 +99,6 @@ function makeUpdateMessage(st, edge) {
 function pad(str, len) {
     while (str.length < len) str = ' ' + str
     return str
-}
-
-function bailoutEv(ev, err) {
-    ev.emit('error', err)
-    ev.emit('finish')
 }
 
 function pathOf(file) {
