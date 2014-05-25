@@ -9,7 +9,6 @@ var path = require('path')
 var mkdirp = require('mkdirp')
 var exec = require('child_process').exec
 var EventEmitter = require('events').EventEmitter
-var read = require('../lib/read')
 var queuedFnOf = require('../lib/queued-fn-of')
 var map = require('../lib/graph/map')
 var sort = require('../lib/update/sort')
@@ -21,56 +20,18 @@ var runEdges = require('../lib/update/run-edges')
 var Scope = require('../lib/scope')
 var forwardEvents = require('../lib/forward-events')
 var Output = require('./output')
+var readInput = require('./read-input')
 
-var DEFAULT_PATHS = ['Mekanofile', 'mekanofile']
 var LOG_PATH = '.mekano/log.json'
-var NO_MANIFEST_FILE = 'no such manifest file `%s\''
-var NO_MANIFEST = 'Mekanofile not found'
 
 function update(opts) {
     var ev = new EventEmitter()
-    openSomeInput(opts.file, function (err, input, filePath) {
-        if (err) return bailoutEv(ev, err)
-        mkdirp('.mekano', function (err) {
-            if (err) return bailoutEv(ev, err)
-            forwardEvents(ev, updateInput(input, filePath))
-        })
-    })
-    return ev
-}
-
-function openSomeInput(filePath, cb) {
-    if (filePath === '-') return cb(null, process.stdin, '<stdin>')
-    if (filePath) return openInput(filePath, cb)
-    ;(function next(i) {
-        if (i >= DEFAULT_PATHS.length) return cb(new Error(NO_MANIFEST))
-        openInput(DEFAULT_PATHS[i], function (err, stream) {
-            if (err) return next(i + 1)
-            return cb(null, stream, DEFAULT_PATHS[i])
-        })
-    })(0)
-}
-
-function openInput(filePath, cb) {
-    var stream = fs.createReadStream(filePath)
-    stream.on('open', function () { return cb(null, stream, filePath) })
-    stream.on('error', function (err) {
-        if (err.code === 'ENOENT')
-            err = new Error(util.format(NO_MANIFEST_FILE, filePath))
-        return cb(err)
-    })
-}
-
-function updateInput(input, filePath) {
-    var ev = new EventEmitter()
-    var augmentError = function augmentError(err) { err.filePath = filePath }
-    forwardEvents(ev, read(input), function transsReady(errored, transs, unit) {
+    var inputRead = function (errored, filePath, transs, unit) {
         if (errored) return ev.emit('finish')
-        forwardEvents(ev, updateTranss(transs, unit), function transsUpdated() {
-            ev.emit('finish')
-        }, augmentError)
-    }, augmentError)
-    return ev
+        forwardEvents(ev, updateTranss(transs, unit), null
+                    , function augmentError(err) { err.filePath = filePath })
+    }
+    return forwardEvents(ev, readInput(opts.file), inputRead)
 }
 
 function updateTranss(transs, unit) {
