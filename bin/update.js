@@ -4,85 +4,48 @@ module.exports = update
 var util = require('util')
 var fs = require('fs')
 var os = require('os')
-var glob = require('glob')
 var path = require('path')
 var mkdirp = require('mkdirp')
 var exec = require('child_process').exec
 var EventEmitter = require('events').EventEmitter
 var queuedFnOf = require('../lib/queued-fn-of')
-var map = require('../lib/graph/map')
 var sort = require('../lib/update/sort')
 var imprint = require('../lib/update/imprint')
-var Log = require('../lib/update/log')
 var expandCmds = require('../lib/update/expand-cmds')
 var identify = require('../lib/update/identify')
 var runEdges = require('../lib/update/run-edges')
-var Scope = require('../lib/scope')
 var forwardEvents = require('../lib/forward-events')
 var Output = require('./output')
-var readInput = require('./read-input')
+var readGraph = require('./read-graph')
 
 var LOG_PATH = '.mekano/log.json'
 
 function update(opts) {
     var ev = new EventEmitter()
-    var inputRead = function (errored, filePath, transs, unit) {
+    return forwardEvents(ev, readGraph(opts.file, LOG_PATH)
+                       , function (errored, data) {
         if (errored) return ev.emit('finish')
-        forwardEvents(ev, updateTranss(transs, unit), null
-                    , function augmentError(err) { err.filePath = filePath })
-    }
-    return forwardEvents(ev, readInput(opts.file), inputRead)
-}
-
-function updateTranss(transs, unit) {
-    var ev = new EventEmitter()
-    var scope
-    try { scope = Scope.fromBinds(unit.binds) }
-    catch (err) {
-        if (err.name !== 'BindError') throw err
-        ev.emit('error', err)
-        return ev.emit('finish')
-    }
-    getLog(function (err, log) {
-        if (err) return bailoutEv(ev, err)
-        if (err) log = new Log()
-        var from = map(glob, log, transs)
-        forwardEvents(ev, from, function graphMapped(errored, graph) {
-            if (errored) return ev.emit('finish')
-            var from = updateGraph(log, scope, unit.recipes, graph)
-            forwardEvents(ev, from, function graphUpdated() {
-                var s = log.save(fs.createWriteStream(LOG_PATH))
-                s.end(function () {
-                    ev.emit('finish')
-                })
+        forwardEvents(ev, updateGraph(data), function graphUpdated() {
+            var s = data.log.save(fs.createWriteStream(LOG_PATH))
+            s.end(function () {
+                ev.emit('finish')
             })
         })
     })
-    return ev
 }
 
-function getLog(cb) {
-    Log.fromStream(fs.createReadStream(LOG_PATH), function (err, log) {
-        if (err && err.code !== 'ENOENT') return cb(err)
-        if (err) log = new Log()
-        log.refresh(function (err) {
-            return cb(err, log)
-        })
-    })
-}
-
-function updateGraph(log, scope, recipes, graph) {
-    var files = sort(graph.files)
-    var cmds = expandCmds(scope, recipes, graph.edges)
+function updateGraph(data) {
+    var files = sort(data.graph.files)
+    var cmds = expandCmds(data.scope, data.recipes, data.graph.edges)
     var ev = new EventEmitter()
     imprint(fs, files, cmds, function (err, imps) {
         if (err) return bailoutEv(ev, err)
-        var edges = identify(log, files, imps)
+        var edges = identify(data.log, files, imps)
         if (edges.length === 0) {
             console.log('Everything is up to date.')
             return ev.emit('finish')
         }
-        var st = {cmds: cmds, edges: edges, runCount: 0, log: log
+        var st = {cmds: cmds, edges: edges, runCount: 0, log: data.log
                 , imps: imps, dirs: {}, output: new Output()}
         var re = queuedFnOf(runEdge.bind(null, st), os.cpus().length)
         st.output.update(makeUpdateMessage(st))
