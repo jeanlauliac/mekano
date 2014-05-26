@@ -154,6 +154,7 @@ General options:
   * **-r, --robot** Output machine-parseable text.
   * **-s, --silent** Be silent: don't write executed commands.
   * **-F, --force** Force things, like overwriting modified files. Dangerous.
+  * **-v, --version** Output version and exit.
 
 Binds and target names can be mixed on the command-line, but targets are always
 evaluated last. Values cannot refer to values inside the mekanofile, but the

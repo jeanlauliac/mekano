@@ -9,21 +9,22 @@ var path = require('path')
 var EventEmitter = require('events').EventEmitter
 
 var KNOWN_OPTS = {
-    'dry-run': Boolean, 'file': String, 'silent': Boolean
-  , 'force': Boolean, 'version': Boolean
+    'dry-run': Boolean, 'file': String, 'silent': Boolean, 'robot': Boolean
+  , 'force': Boolean, 'version': Boolean, 'shy': Boolean
 }
 
 var SHORTHANDS = {
     'f': ['--file'], 'n': ['--dry-run'], 's': ['--silent']
-  , 'F': ['--force'], 'v': ['--version']
+  , 'F': ['--force'], 'v': ['--version'], 'y': ['--shy'], 'r': ['--robot']
 }
 
 var COMMANDS = abbrev([
-    'update', 'status', 'clean', 'aliases', 'trace', 'help'
+    'update', 'watch', 'status', 'clean', 'aliases', 'trace', 'help'
 ])
 
 function main() {
     var opts = nopt(KNOWN_OPTS, SHORTHANDS)
+    if (opts.version) return version()
     if (opts.argv.remain.length === 0) opts.argv.remain.push('help')
     var cmdAbbr = opts.argv.remain.shift()
     var command = COMMANDS[cmdAbbr]
@@ -82,6 +83,10 @@ Commands.help = function () {
     f.pipe(process.stderr)
     f.on('end', function () { ev.emit('finish') })
     return ev
+}
+
+function version() {
+    console.log(require('../package').version)
 }
 
 main()
