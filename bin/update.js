@@ -33,7 +33,7 @@ function updateGraph(data) {
     var ev = new EventEmitter()
     if (data.edges.length === 0) {
         console.log(common.EVERYTHING_UTD)
-        process.nextTick(ev.emit.bind(null, 'finish'))
+        process.nextTick(ev.emit.bind(ev, 'finish'))
         return ev
     }
     var st = {data: data, runCount: 0
