@@ -18,10 +18,6 @@ var SHORTHANDS = {
   , 'F': ['--force'], 'v': ['--version'], 'y': ['--shy'], 'r': ['--robot']
 }
 
-var COMMANDS = abbrev([
-    'update', 'watch', 'status', 'clean', 'aliases', 'trace', 'help'
-])
-
 function main() {
     var opts = nopt(KNOWN_OPTS, SHORTHANDS)
     if (opts.version) return version()
@@ -63,6 +59,7 @@ function log(type, err) {
 
 var Commands = {}
 Commands.update = require('./update')
+Commands.watch = require('./watch')
 Commands.status = require('./status')
 Commands.aliases = require('./aliases')
 
@@ -81,6 +78,16 @@ Commands.help = function () {
     f.pipe(process.stderr)
     f.on('end', function () { ev.emit('finish') })
     return ev
+}
+
+var COMMANDS = getCommandAbbrev()
+
+function getCommandAbbrev() {
+    var cmds = []
+    for (var command in Commands) {
+        cmds.push(command)
+    }
+    return abbrev(cmds)
 }
 
 function version() {

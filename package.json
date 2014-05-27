@@ -55,6 +55,7 @@
   "dependencies": {
     "abbrev": "^1.0.5",
     "concat-stream": "^1.4.5",
+    "debounce": "0.0.3",
     "extsprintf": "^1.0.3",
     "gaze": "^0.6.4",
     "glob": "^3.2.9",

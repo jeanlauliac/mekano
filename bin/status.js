@@ -2,14 +2,14 @@
 module.exports = status
 
 var EventEmitter = require('events').EventEmitter
-var readData = require('./read-data')
+var readGraph = require('./read-graph')
 var common = require('./common')
 var forwardEvents = require('../lib/forward-events')
 
 function status(opts) {
     var ev = new EventEmitter()
-    return forwardEvents(ev, readData(opts.file, common.LOG_PATH)
-                       , function (errored, data) {
+    var rg = readGraph(opts.file, common.LOG_PATH)
+    return forwardEvents(ev, rg, function (errored, data) {
         if (errored) return ev.emit('finish')
         showStatus(data)
         ev.emit('finish')

@@ -132,7 +132,8 @@ Commands:
   * **update** Update the specified targets. The whole project is updated if no
     target is specified.
   * **watch** Keep updating files until a signal is caught. It watches files and
-    updates targets when prerequisites change.
+    updates targets when prerequisites change. If the Mekanofile itself changes,
+    you need to relaunch mekano manually.
   * **status** Display the modified files and dirty targets. No target is
     updated. If **--silent** is specified, return a zero exit value if the
     targets are up to date; otherwise, return 1.
@@ -169,12 +170,17 @@ percentage. The **-r** option makes the output easily parseable.
 If any of the SIGHUP, SIGTERM, SIGINT, and SIGQUIT signals is received, the
 targets being processed are removed and the tool returns cleanly.
 
+At the moment, Mekano cannot update the Mekanofile itself and take account of it
+in a single run (with a relation like `Mekanofile.in M4 -> Mekanofile`). You
+will need to run it twice. This will be improved in the future.
+
 Syntax
 ------
 
 A mekanofile can contain recipes, relations, and binds. Comments start with
 `#`, and end with the next new line. Whitespace is never significant is all
-other cases; that is why statements must be terminated with `;`.
+other cases. Statements shall be terminated with `;`, otherwise *mekano* will
+not know the boundary between two successive relations.
 
     unit = { recipe | relation | bind }
 
@@ -256,11 +262,11 @@ is equivalent to:
 
 There are two kind of transformations with *mekano*:
 
-  * **plain** transformations noted with a simple arrow '->'.
+  * **plain** transformations noted with a simple arrow `->`.
     The recipe is invoked with all the input files, and is assumed to produce
     all the output files.
 
-  * **generative** transformations noted with a fat arrow '=>'. A plain
+  * **generative** transformations noted with a fat arrow `=>`. A plain
     transformation is instantiated for each file matched in the prerequisite
     globbing pattern. For example, if we have two files `foo.c` and `bar.c`,
     the relation:

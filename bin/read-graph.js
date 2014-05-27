@@ -2,14 +2,13 @@
 module.exports = readGraph
 
 var fs = require('fs')
-var glob = require('glob')
-var EventEmitter = require('events').EventEmitter
 var Log = require('../lib/update/log')
+var EventEmitter = require('events').EventEmitter
 var readInput = require('./read-input')
 var forwardEvents = require('../lib/forward-events')
-var map = require('../lib/graph/map')
 var Scope = require('../lib/scope')
 var helpers = require('./helpers')
+var refreshGraph = require('./refresh-graph')
 
 function readGraph(manifestPath, logPath) {
     var ev = new EventEmitter()
@@ -27,8 +26,8 @@ function readGraph(manifestPath, logPath) {
 
 function getGraph(logPath, transs, unit) {
     var ev = new EventEmitter()
-    var scope
-    try { scope = Scope.fromBinds(unit.binds) }
+    var data = {recipes: unit.recipes, transs: transs}
+    try { data.scope = Scope.fromBinds(unit.binds) }
     catch (err) {
         if (err.name !== 'BindError') throw err
         ev.emit('error', err)
@@ -36,12 +35,9 @@ function getGraph(logPath, transs, unit) {
     }
     getLog(logPath, function (err, log) {
         if (err) return helpers.bailoutEv(ev, err)
-        var from = map(glob, log, transs)
-        forwardEvents(ev, from, function graphMapped(errored, graph) {
-            if (errored) return ev.emit('finish')
-            ev.emit('finish', {
-                log: log, scope: scope, recipes: unit.recipes, graph: graph
-            })
+        data.log = log
+        forwardEvents(ev, refreshGraph(data), function () {
+            ev.emit('finish', data)
         })
     })
     return ev
