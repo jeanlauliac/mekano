@@ -9,18 +9,20 @@ var readInput = require('./read-input')
 var forwardEvents = require('../lib/forward-events')
 var map = require('../lib/graph/map')
 var Scope = require('../lib/scope')
+var helpers = require('./helpers')
 
 function readGraph(manifestPath, logPath) {
     var ev = new EventEmitter()
-    return forwardEvents(ev, readInput(manifestPath)
-                       , function (errored, filePath, transs, unit) {
+    var ri = readInput.readInput(manifestPath)
+    forwardEvents(ev, ri, function inputRead(errored, filePath, transs, unit) {
         if (errored) return ev.emit('finish')
-        forwardEvents(ev, getGraph(logPath, transs, unit)
-                    , function (errored, data) {
+        var gg = getGraph(logPath, transs, unit)
+        forwardEvents(ev, gg, function graphGot(errored, data) {
             if (errored) return ev.emit('finish')
             ev.emit('finish', data)
         }, function augmentError(err) { err.filePath = filePath })
     })
+    return ev
 }
 
 function getGraph(logPath, transs, unit) {
@@ -33,7 +35,7 @@ function getGraph(logPath, transs, unit) {
         return ev.emit('finish')
     }
     getLog(logPath, function (err, log) {
-        if (err) return bailoutEv(ev, err)
+        if (err) return helpers.bailoutEv(ev, err)
         var from = map(glob, log, transs)
         forwardEvents(ev, from, function graphMapped(errored, graph) {
             if (errored) return ev.emit('finish')
@@ -53,9 +55,4 @@ function getLog(logPath, cb) {
             return cb(err, log)
         })
     })
-}
-
-function bailoutEv(ev, err) {
-    ev.emit('error', err)
-    ev.emit('finish')
 }

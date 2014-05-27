@@ -14,6 +14,7 @@ var forwardEvents = require('../lib/forward-events')
 var Output = require('./output')
 var readData = require('./read-data')
 var common = require('./common')
+var helpers = require('./helpers')
 
 function update(opts) {
     var ev = new EventEmitter()
@@ -21,9 +22,12 @@ function update(opts) {
                        , function (errored, data) {
         if (errored) return ev.emit('finish')
         forwardEvents(ev, updateGraph(data), function graphUpdated() {
-            var s = data.log.save(fs.createWriteStream(common.LOG_PATH))
-            s.end(function () {
-                ev.emit('finish')
+            mkdirp(path.dirname(common.LOG_PATH), function (err) {
+                if (err) return helpers.bailoutEv(ev, err)
+                var s = data.log.save(fs.createWriteStream(common.LOG_PATH))
+                s.end(function () {
+                    ev.emit('finish')
+                })
             })
         })
     })
@@ -90,14 +94,9 @@ function makeUpdateMessage(st, edge) {
                           , edge.inFiles.map(pathOf).join(' ')
                           , edge.outFiles.map(pathOf).join(' ')) : ''
     var message = util.format('Updating... %s%  %s'
-                            , pad((perc * 100).toFixed(1), 5)
+                            , helpers.pad((perc * 100).toFixed(1), 5)
                             , label)
     return message
-}
-
-function pad(str, len) {
-    while (str.length < len) str = ' ' + str
-    return str
 }
 
 function pathOf(file) {

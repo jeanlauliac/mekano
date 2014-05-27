@@ -64,14 +64,12 @@ function log(type, err) {
 var Commands = {}
 Commands.update = require('./update')
 Commands.status = require('./status')
+Commands.aliases = require('./aliases')
 
 Commands.clean = function () {
     
 }
 
-Commands.aliases = function () {
-
-}
 
 Commands.trace = function () {
 

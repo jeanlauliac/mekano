@@ -1,12 +1,16 @@
 'use strict';
-module.exports = readInput
+module.exports = {
+    readInput: readInput
+  , openSomeInput: openSomeInput
+  , readTranss: readTranss
+}
 
 var util = require('util')
 var fs = require('fs')
 var EventEmitter = require('events').EventEmitter
-var mkdirp = require('mkdirp')
 var read = require('../lib/read')
 var forwardEvents = require('../lib/forward-events')
+var helpers = require('./helpers')
 
 var DEFAULT_PATHS = ['Mekanofile', 'mekanofile']
 var NO_MANIFEST_FILE = 'no such manifest file `%s\''
@@ -15,13 +19,10 @@ var NO_MANIFEST = 'Mekanofile not found'
 function readInput(filePath) {
     var ev = new EventEmitter()
     openSomeInput(filePath, function (err, input, filePath) {
-        if (err) return bailoutEv(ev, err)
-        mkdirp('.mekano', function (err) {
-            if (err) return bailoutEv(ev, err)
-            var rt = readTranss(input, filePath)
-            forwardEvents(ev, rt, function (errored, transs, unit) {
-                ev.emit('finish', filePath, transs, unit)
-            })
+        if (err) return helpers.bailoutEv(ev, err)
+        var rt = readTranss(input, filePath)
+        forwardEvents(ev, rt, function (errored, transs, unit) {
+            ev.emit('finish', filePath, transs, unit)
         })
     })
     return ev
@@ -52,14 +53,10 @@ function openInput(filePath, cb) {
 function readTranss(input, filePath) {
     var ev = new EventEmitter()
     var augmentError = function augmentError(err) { err.filePath = filePath }
-    forwardEvents(ev, read(input), function transsReady(errored, transs, unit) {
+    var rt = read.readTranss(input)
+    forwardEvents(ev, rt, function transsReady(errored, transs, unit) {
         if (errored) return ev.emit('finish')
         ev.emit('finish', transs, unit)
     }, augmentError)
     return ev
-}
-
-function bailoutEv(ev, err) {
-    ev.emit('error', err)
-    ev.emit('finish')
 }
