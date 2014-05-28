@@ -34,20 +34,26 @@ function updateGraph(data, opts) {
 
 function update(data, opts) {
     var ev = new EventEmitter()
+    if (opts['robot']) console.log(' e %d', data.edges.length)
     if (data.edges.length === 0) {
-        console.log(common.EVERYTHING_UTD)
+        if (opts['robot']) console.log(' D')
+        else console.log(common.EVERYTHING_UTD)
         process.nextTick(ev.emit.bind(ev, 'finish'))
         return ev
     }
-    var st = {data: data, runCount: 0
+    var st = {data: data, runCount: 0, opts: opts
             , dirs: {}, output: new Output(opts['dry-run'])}
+    st.updateMessage = opts['robot'] ? updateRobotMessage : updateMessage
     var reFn = opts['dry-run'] ? dryRunEdge : runEdge
     var re = queuedFnOf(reFn.bind(null, st), os.cpus().length)
-    st.output.update(makeUpdateMessage(st, null, opts['dry-run']))
+    st.updateMessage(st, null)
     var res = runEdges(data.edges, re)
     return forwardEvents(ev, res, function (errored) {
         st.output.endUpdate()
-        if (!errored) console.log('Done.')
+        if (!errored) {
+            if (opts['robot']) console.log(' D')
+            else console.log('Done.')
+        }
         ev.emit('finish')
     }, function () { st.output.endUpdate() })
 }
@@ -55,7 +61,7 @@ function update(data, opts) {
 function dryRunEdge(st, edge, cb) {
     process.nextTick(function () {
         st.runCount++
-        st.output.update(makeUpdateMessage(st, edge, true))
+        st.updateMessage(st, edge)
         return cb(null)
     })
 }
@@ -66,7 +72,7 @@ function runEdge(st, edge, cb) {
         if (err) return cb(err)
         exec(cmd, function (err, stdout, stderr) {
             if (!err) st.runCount++
-            st.output.update(makeUpdateMessage(st, edge))
+            st.updateMessage(st, edge)
             if (stdout.length > 0 || stderr.length > 0) {
                 st.output.endUpdate()
                 process.stdout.write(stdout)
@@ -96,17 +102,30 @@ function mkEdgeDirs(st, edge, cb) {
     })(0)
 }
 
-function makeUpdateMessage(st, edge, dryRun) {
+function updateRobotMessage(st, edge) {
+    if (!edge) return
+    var name = edge.trans.ast.recipeName
+    var inFiles = edge.inFiles.map(pathOf).join(' ')
+    var outFiles = edge.outFiles.map(pathOf).join(' ')
+    var modifier = st.opts['dry-run'] ? 'w' : ' '
+    var message = util.format('%sU %d %s %s -- %s', modifier, st.runCount
+                            , name, inFiles, outFiles)
+    console.log(message)
+}
+
+function updateMessage(st, edge) {
     var perc = (st.runCount / st.data.edges.length)
-    var label = edge ? util.format('%s %s -> %s'
-                          , edge.trans.ast.recipeName
-                          , edge.inFiles.map(pathOf).join(' ')
-                          , edge.outFiles.map(pathOf).join(' ')) : ''
-    var action = dryRun ? 'Would update' : 'Updating'
-    var message = util.format('%s... %s%  %s', action
-                            , helpers.pad((perc * 100).toFixed(1), 5)
-                            , label)
-    return message
+    var label = ''
+    if (edge) {
+        var name = edge.trans.ast.recipeName
+        var inFiles = edge.inFiles.map(pathOf).join(' ')
+        var outFiles = edge.outFiles.map(pathOf).join(' ')
+        label = util.format('%s %s -> %s', name, inFiles, outFiles)
+    }
+    var action = st.opts['dry-run'] ? 'Would update' : 'Updating'
+    var percStr = helpers.pad((perc * 100).toFixed(1), 5)
+    var message = util.format('%s... %s%  %s', action, percStr, label)
+    st.output.update(message)
 }
 
 function pathOf(file) {
