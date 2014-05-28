@@ -16,9 +16,11 @@ var Output = require('./output')
 var common = require('./common')
 var helpers = require('./helpers')
 
-function updateGraph(data) {
+function updateGraph(data, opts) {
+    if (!opts) opts = {}
     var ev = new EventEmitter()
-    forwardEvents(ev, update(data), function () {
+    forwardEvents(ev, update(data, opts), function () {
+        if (opts['dry-run']) return ev.emit('finish')
         mkdirp(path.dirname(common.LOG_PATH), function (err) {
             if (err) return helpers.bailoutEv(ev, err)
             var s = data.log.save(fs.createWriteStream(common.LOG_PATH))
@@ -30,7 +32,7 @@ function updateGraph(data) {
     return ev
 }
 
-function update(data) {
+function update(data, opts) {
     var ev = new EventEmitter()
     if (data.edges.length === 0) {
         console.log(common.EVERYTHING_UTD)
@@ -38,14 +40,24 @@ function update(data) {
         return ev
     }
     var st = {data: data, runCount: 0
-            , dirs: {}, output: new Output()}
-    var re = queuedFnOf(runEdge.bind(null, st), os.cpus().length)
-    st.output.update(makeUpdateMessage(st))
-    return forwardEvents(ev, runEdges(data.edges, re), function (errored) {
+            , dirs: {}, output: new Output(opts['dry-run'])}
+    var reFn = opts['dry-run'] ? dryRunEdge : runEdge
+    var re = queuedFnOf(reFn.bind(null, st), os.cpus().length)
+    st.output.update(makeUpdateMessage(st, null, opts['dry-run']))
+    var res = runEdges(data.edges, re)
+    return forwardEvents(ev, res, function (errored) {
         st.output.endUpdate()
         if (!errored) console.log('Done.')
         ev.emit('finish')
     }, function () { st.output.endUpdate() })
+}
+
+function dryRunEdge(st, edge, cb) {
+    process.nextTick(function () {
+        st.runCount++
+        st.output.update(makeUpdateMessage(st, edge, true))
+        return cb(null)
+    })
 }
 
 function runEdge(st, edge, cb) {
@@ -84,13 +96,14 @@ function mkEdgeDirs(st, edge, cb) {
     })(0)
 }
 
-function makeUpdateMessage(st, edge) {
+function makeUpdateMessage(st, edge, dryRun) {
     var perc = (st.runCount / st.data.edges.length)
-    var label = edge? util.format('%s %s -> %s'
+    var label = edge ? util.format('%s %s -> %s'
                           , edge.trans.ast.recipeName
                           , edge.inFiles.map(pathOf).join(' ')
                           , edge.outFiles.map(pathOf).join(' ')) : ''
-    var message = util.format('Updating... %s%  %s'
+    var action = dryRun ? 'Would update' : 'Updating'
+    var message = util.format('%s... %s%  %s', action
                             , helpers.pad((perc * 100).toFixed(1), 5)
                             , label)
     return message

@@ -17,12 +17,14 @@ var DELAY_MS = 500
 function watch(opts) {
     var ev = new EventEmitter()
     var rg = readGraph(opts.file, common.LOG_PATH)
-    return forwardEvents(ev, rg, function (errored, data) {
+    forwardEvents(ev, rg, function graphRead(errored, data) {
         if (errored) return ev.emit('finish')
-        forwardEvents(ev, updateGraph(data), function graphUpdated() {
+        var ug = updateGraph(data, opts)
+        forwardEvents(ev, ug, function graphUpdated() {
             forwardEvents(ev, watchAndUpdate(data))
         })
     })
+    return ev
 }
 
 function watchAndUpdate(data) {

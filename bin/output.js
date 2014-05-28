@@ -3,9 +3,9 @@ module.exports = Output
 
 var readline = require('readline')
 
-function Output() {
+function Output(disableTTY) {
     this._inUpdate = false
-    this._tty = process.stdout.isTTY
+    this._tty = !disableTTY && process.stdout.isTTY
 }
 
 Output.prototype.log = function () {
