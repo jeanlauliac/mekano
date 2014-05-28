@@ -137,7 +137,9 @@ Commands:
   * **status** Display the modified files and dirty targets. No target is
     updated. If **--silent** is specified, return a zero exit value if the
     targets are up to date; otherwise, return 1.
-  * **clean** Remove the specified and intermediary targets.
+  * **clean** Remove the specified and dependent targets. For example, if `all`
+    is an alias for a C++ resulting binary, `clean all` will only remove this
+    binary. All generated files are removed if no target is specified.
   * **aliases** Display a list of the defined aliases.
   * **print** *type* Display the mekanofile interpretation. Types:
       * **manifest** Output the mekanofile as it had been interpreted.
@@ -334,6 +336,15 @@ Once the mekanofile has been interpreted, *mekano* executes the steps below.
 
 Any output directory containing targets is automatically created by *mekano*
 during the update.
+
+Known limitations
+----------------
+
+It is generally planned to improve upon those limitations.
+
+  * pattern transposition for generative transformations is very basic;
+  * a bug appears, for the command `watch' only, when a
+    [file is renamed](https://github.com/shama/gaze/issues/107)
 
 Trivia
 ------
