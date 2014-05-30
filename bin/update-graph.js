@@ -16,6 +16,8 @@ var Output = require('./output')
 var common = require('./common')
 var helpers = require('./helpers')
 
+var SOME_UTD = 'Those are already up-to-date: %s.'
+
 function updateGraph(data, opts) {
     if (!opts) opts = {}
     var ev = new EventEmitter()
@@ -35,12 +37,7 @@ function updateGraph(data, opts) {
 function update(data, opts) {
     var ev = new EventEmitter()
     if (opts['robot']) console.log(' e %d', data.edges.length)
-    if (data.edges.length === 0) {
-        if (opts['robot']) console.log(' D')
-        else console.log(common.EVERYTHING_UTD)
-        process.nextTick(ev.emit.bind(ev, 'finish'))
-        return ev
-    }
+    if (data.edges.length === 0) return alreadyUpToDate(ev, data, opts)
     var st = {data: data, runCount: 0, opts: opts
             , dirs: {}, output: new Output(opts['dry-run'])}
     st.updateMessage = opts['robot'] ? updateRobotMessage : updateMessage
@@ -56,6 +53,19 @@ function update(data, opts) {
         }
         ev.emit('finish')
     }, function () { st.output.endUpdate() })
+}
+
+function alreadyUpToDate(ev, data, opts) {
+    if (opts['robot']) {
+        console.log(' D')
+    } else {
+        if (data.targets.length === 0)
+            console.log(common.EVERYTHING_UTD)
+        else
+            console.log(util.format(SOME_UTD, data.targets.join(', ')))
+    }
+    process.nextTick(ev.emit.bind(ev, 'finish'))
+    return ev
 }
 
 function dryRunEdge(st, edge, cb) {

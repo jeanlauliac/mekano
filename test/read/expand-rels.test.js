@@ -1,7 +1,7 @@
 'use strict';
 
 var test = require('tape')
-var expandPaths = require('../../lib/read/expand-paths')
+var expandRels = require('../../lib/read/expand-rels')
 var ast = require('../../lib/read/ast')
 var interRep = require('../../lib/read/inter-rep')
 
@@ -24,8 +24,8 @@ var TEST_ALIASES = {
     ])
 }
 
-test('read.expandPaths() ', function (t) {
-    var rels = expandPaths(TEST_RELS, TEST_ALIASES)
+test('read.expandRels() ', function (t) {
+    var rels = expandRels(TEST_RELS, TEST_ALIASES)
     t.equal(rels.length, 1)
     t.equal(rels[0].prereqs.length, 3)
     t.equal(rels[0].prereqs[0].value, 'fizz.c')
