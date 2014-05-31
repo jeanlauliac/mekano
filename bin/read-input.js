@@ -21,8 +21,9 @@ function readInput(filePath) {
     openSomeInput(filePath, function (err, input, filePath) {
         if (err) return helpers.bailoutEv(ev, err)
         var rt = readTranss(input, filePath)
-        forwardEvents(ev, rt, function (errored, transs, unit) {
-            ev.emit('finish', filePath, transs, unit)
+        forwardEvents(ev, rt, function (errored, data) {
+            data.filePath = filePath
+            ev.emit('finish', data)
         })
     })
     return ev
@@ -54,9 +55,9 @@ function readTranss(input, filePath) {
     var ev = new EventEmitter()
     var augmentError = function augmentError(err) { err.filePath = filePath }
     var rt = read.readTranss(input)
-    forwardEvents(ev, rt, function transsReady(errored, transs, unit) {
+    forwardEvents(ev, rt, function transsReady(errored, data) {
         if (errored) return ev.emit('finish')
-        ev.emit('finish', transs, unit)
+        ev.emit('finish', data)
     }, augmentError)
     return ev
 }

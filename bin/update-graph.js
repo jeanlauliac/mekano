@@ -59,10 +59,14 @@ function alreadyUpToDate(ev, data, opts) {
     if (opts['robot']) {
         console.log(' D')
     } else {
-        if (data.targets.length === 0)
+        if (data.cliRefs.length === 0) {
             console.log(common.EVERYTHING_UTD)
-        else
-            console.log(util.format(SOME_UTD, data.targets.join(', ')))
+        } else {
+            var list = data.cliRefs.map(function (ref) {
+                return ref.value
+            }).join(', ')
+            console.log(util.format(SOME_UTD, list))
+        }
     }
     process.nextTick(ev.emit.bind(ev, 'finish'))
     return ev

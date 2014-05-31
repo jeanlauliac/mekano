@@ -6,6 +6,7 @@ var glob = require('glob')
 var util = require('util')
 var EventEmitter = require('events').EventEmitter
 var map = require('../lib/graph/map')
+var ast = require('../lib/read/ast')
 var sort = require('../lib/update/sort')
 var expandCmds = require('../lib/update/expand-cmds')
 var imprint = require('../lib/update/imprint')
@@ -15,17 +16,17 @@ var helpers = require('./helpers')
 var errors = require('../lib/errors')
 
 var NO_MATCH = 'no file matches the pattern `%s\''
+var NO_SUCH_FILE = 'no such file `%s\', put patterns into "quotes" to avoid ' +
+                   'shell expansion'
 
-function refreshGraph(data, targets) {
+function refreshGraph(data) {
     if (!data) throw errors.invalidArg('data', data)
-    if (!(targets instanceof Array))
-        throw errors.invalidArg('targets', targets)
     var ev = new EventEmitter()
     var from = map(glob, data.log, data.transs)
     forwardEvents(ev, from, function graphMapped(errored, graph) {
         if (errored) return ev.emit('finish')
         data.graph = graph
-        var rd = refreshData(data, targets)
+        var rd = refreshData(data)
         forwardEvents(ev, rd, function () {
             ev.emit('finish', data)
         })
@@ -33,14 +34,14 @@ function refreshGraph(data, targets) {
     return ev
 }
 
-function refreshData(data, targets) {
+function refreshData(data) {
     var ev = new EventEmitter()
-    var et = extractTargets(data.graph, targets)
-    forwardEvents(ev, et, function (errored, files) {
-        data.targets = targets
+    var et = extractCliRefs(data)
+    forwardEvents(ev, et, function cliRefGot(errored, files) {
+        if (errored) return ev.emit('finish')
         data.files = sort(files)
         data.cmds = expandCmds(data.scope, data.recipes, data.graph.edges)
-        imprint(fs, data.files, data.cmds, function (err, imps) {
+        imprint(fs, data.files, data.cmds, function imprinted(err, imps) {
             if (err) return helpers.bailoutEv(ev, err)
             data.imps = imps
             data.edges = identify(data.log, data.files, imps)
@@ -50,22 +51,32 @@ function refreshData(data, targets) {
     return ev
 }
 
-function extractTargets(graph, targets) {
+function extractCliRefs(data) {
     var ev = new EventEmitter()
     process.nextTick(function () {
         var files = []
-        if (targets.length === 0) {
-            return ev.emit.bind(ev, 'finish', graph.files)
+        if (data.cliRefs.length === 0) {
+            return ev.emit('finish', data.graph.files)
         }
-        targets.forEach(function (target) {
-            if (typeof target !== 'string')
-                throw errors.invalidArg('targets', targets)
-            var newFiles = graph.getFilesByGlob(target)
-            if (newFiles.length === 0) {
-                var err = new Error(util.format(NO_MATCH, target))
-                return ev.emit('warning', err)
+        data.cliRefs.forEach(function (ref) {
+            var err
+            if (!(ref instanceof ast.Ref) || ref.isA(ast.Ref.ALIAS))
+                throw errors.invalidArg('data', data)
+            if (ref.isA(ast.Ref.PATH_GLOB)) {
+                var newFiles = data.graph.getFilesByGlob(ref.value)
+                if (newFiles.length === 0) {
+                    err = new Error(util.format(NO_MATCH, ref.value))
+                    return ev.emit('warning', err)
+                }
+                files = files.concat(newFiles)
+                return
             }
-            files = files.concat(newFiles)
+            var newFile = data.graph.getFile(ref.value)
+            if (newFile === null) {
+                err = new Error(util.format(NO_SUCH_FILE, ref.value))
+                return ev.emit('error', err)
+            }
+            files.push(newFile)
         })
         ev.emit('finish', files)
     })
