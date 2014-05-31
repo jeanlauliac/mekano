@@ -39,8 +39,14 @@ function refreshData(data) {
     var et = extractCliRefs(data)
     forwardEvents(ev, et, function cliRefGot(errored, files) {
         if (errored) return ev.emit('finish')
-        data.files = sort(files)
-        data.cmds = expandCmds(data.scope, data.recipes, data.graph.edges)
+        try {
+            data.files = sort(files)
+            data.cmds = expandCmds(data.scope, data.recipes, data.graph.edges)
+        } catch (err) {
+            if (err.name === 'BindError' ||
+                err.name === 'ParseError') return helpers.bailoutEv(ev, err)
+            throw err
+        }
         imprint(fs, data.files, data.cmds, function imprinted(err, imps) {
             if (err) return helpers.bailoutEv(ev, err)
             data.imps = imps
