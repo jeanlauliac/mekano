@@ -50,8 +50,11 @@ function main() {
 
 function log(type, err) {
     var str = ''
-    if (err.filePath && err.location)
-        str += util.format('%s:%s: ', err.filePath, err.location)
+    if (err.filePath) {
+        str += err.filePath + ':'
+        if (err.location) str += err.location + ':'
+        else str += ' '
+    }
     str += type + ': '
     str += err.message
     console.error(str)
@@ -64,7 +67,7 @@ Commands.status = require('./status')
 Commands.aliases = require('./aliases')
 
 Commands.clean = function () {
-    
+
 }
 
 

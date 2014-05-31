@@ -21,8 +21,8 @@ Synopsis
   * works **best** with a **powerful shell** (like bash & co.), that it does not
     supplant;
   * is **not** tied to any **specific technology** and may be used to compile
-    C/C++, build a web application Javascript/CSS assets, or **brew your
-    coffee**.
+    C/C++, build a web application Javascript/CSS assets, or brew your
+    coffee.
 
 Example
 -------
@@ -75,30 +75,33 @@ prerequisites. Typical cases include (non-exhaustive):
   * linking a group of object files to a single binary;
   * transpiling a plain JavaScript to a minified JavaScript.
 
-A description file (called mekanofile) contains a description of the
-relationships between files, and the commands that need to be executed to update
-the targets and reflect changes in their prerequisites.
+A description file (called mekanofile, or *manifest*) contains a description of
+the relationships between files, and the commands that need to be executed to
+update the targets and reflect changes in their prerequisites.
 
 *mekano* focuses above all on correctness and convenience, then speed. It
 properly takes account of removed and added files; tracks command-line changes;
-automatically create output directories; and provides sane semantics for
-dependency definitions. This tool is largely inspired by the UNIX *make(1)*
-utility, of which it modestly tries to be a 21th-century alternative.
+automatically creates output directories; runs commands concurrently; and
+attempts to provide simple semantics for dependency definitions. This tool is
+largely inspired by the
+[UNIX *make(1)*](http://pubs.opengroup.org/onlinepubs/009695399/utilities/make.html)
+utility, of which it modestly tries to be a 21th-century alternative (not a
+replacement).
 
 *mekano* only knows how to update files. It is not well suited for so-called
-'tasks' (eg. 'test', 'publish'). Plain scripts are probably a better idea (with
-bash, Javascript, Python…) for those. Using
-[npm-scripts](https://www.npmjs.org/doc/misc/npm-scripts.html) is suggested
-as well.
+'tasks' (eg. 'test', 'publish'). Plain scripts are probably a better idea for
+those (bash, Javascript, Python…). Using
+[npm-scripts](https://www.npmjs.org/doc/misc/npm-scripts.html) or tools like
+[grunt](http://gruntjs.com/) is suggested as well.
 
-The mekanofile is generally meant to be written by hand, but there is, for now,
-very little support for build-time decision-making (no 'if', no macros).
-However, you can easily use a dedicaced macro or procedural language to generate
+The mekanofile is generally meant to be written by hand, but there is – for now
+– very little support for update-time decision-making (no 'if', no macros).
+However, you can use a dedicaced macro or procedural language to generate
 the mekanofile, like [m4](http://www.gnu.org/software/m4/manual/m4.html),
 Python, Javascript…
 
 This specific implementation is made with JavaScript on top of Node.js, but keep
-in mind it is usable for any purpose, from C/C++ compilation to web assets
+in mind it may be usable for any purpose, from C/C++ compilation to web assets
 build. Node.js just makes it easier to be multiplatform.
 
 Install
@@ -137,12 +140,12 @@ Commands:
   * **status** Display the modified files and dirty targets. No target is
     updated. If **--silent** is specified, return a zero exit value if the
     targets are up to date; otherwise, return 1.
-  * **clean** Remove the specified and dependent targets. For example, if `all`
-    is an alias for a C++ resulting binary, `clean all` will only remove this
-    binary. All generated files are removed if no target is specified.
+  * **clean** Remove the specified and dependent targets. For example, with the
+    above Mekanofile, `clean dist/concat.js` will remove this file and the
+    minified one. All generated files are removed if no target is specified.
   * **aliases** Display a list of the defined aliases.
   * **print** *type* Display the mekanofile interpretation. Types:
-      * **manifest** Output the mekanofile as it had been interpreted.
+      * **manifest** Output the mekanofile as it had been parsed.
       * **dot** Output the file graph in the graphviz dot format.
   * **help** Display mekano own help.
 
@@ -160,21 +163,22 @@ General options:
   * **-v, --version** Output version and exit.
 
 Binds and target names can be mixed on the command-line, but targets are always
-evaluated last. Values cannot refer to values inside the mekanofile, but the
-contrary is possible.
+evaluated last. Values cannot refer to values declared inside the mekanofile,
+but the contrary is possible.
 
 Without the option **-f**, *mekano* looks in sequence for the files
 **./Mekanofile** and **./mekanofile**. The first found is read.
 
 The standard output reports the recipes being executed as well as the completion
-percentage. The **-r** option makes the output easily parseable.
+percentage. The **-r** option makes the output more easily parseable.
 
 If any of the SIGHUP, SIGTERM, SIGINT, and SIGQUIT signals is received, the
-targets being processed are removed and the tool returns cleanly.
+tool returns cleanly and keeps track of updated files so far.
 
 At the moment, Mekano cannot update the Mekanofile itself and take account of it
-in a single run (with a relation like `Mekanofile.in M4 -> Mekanofile`). You
-will need to run it twice. This will be improved in the future.
+in a single run (with a relation such as `Mekanofile.in M4 -> Mekanofile`). This
+is because it won't reload the Mekanofile after its update. You need to run it
+twice in this case. This will be improved in the future.
 
 Syntax
 ------
@@ -204,22 +208,26 @@ is as below:
     interpolation = "`", ? any character ?, "`" ;
 
 There can only be a single command in a recipe. However, multiple processes can
-be launched using the shell operators `;`, `&&`, `&`, `|` or `||`. The command
-can span several lines. Here a simple recipe example:
+be launched using the shell operators like `;`, `&&`, `&`, `|` or `||`. The
+[pipelines](http://www.gnu.org/software/bash/manual/html_node/Pipelines.html)
+are especially useful to avoid creating temporary files (if your shell supports
+it). The command can span several lines. Here a simple recipe example:
 
     Compile: `gcc -c $in -o $out`;
 
-The command can contain the backtick character when escaped as `` $` ``. `$$`
-yields a single dollar sign. Command lines can refer to bound values with
-`$name` or `$(name)`. The following values are automatically available during
-recipe evaluation:
+Backticks define an *interpolation*. An interpolation can contain the backtick
+character when escaped as `` $` ``. `$$` yields a single dollar sign. Command
+lines can refer to bound values with `$name` or `$(name)`. The following values
+are automatically available during recipe evaluation:
 
   * **in** Space-separated shell-quoted list of the input file(s).
   * **out** Space-separated shell-quoted list of the output file(s).
 
+<!--
 A recipe can also bind local values with braces, for example:
 
     Compile: `$cc -c $in -o $out` { cc = `gcc $cflags` };
+-->
 
 Command lines are evaluated by the local shell, typically with `sh -c`.
 'UpperCamel' case is suggested for naming recipes. Recipes can appear anywhere
@@ -238,11 +246,10 @@ Relation grammar is as below:
     path = { ? alphanumeric character with at least a '.' or a '/' ? }
     path-glob = { ? same as path, but with at least a '*', '**' or '{,}' operator ? }
 
-A prerequisite or a target may be either a single file path or a globling
-pattern. A path always contains one of `/` or `.`, for example `./foo`
-instead of just `foo`; `foo.js` is also recognized as a path thanks to the dot.
-On the other hand, an alias name cannot contain `/` or `.` characters.
-Here a simple relation example:
+A prerequisite or a target may be either a single file path, a globling pattern,
+or an alias. A path always contains one of `/` or `.`, for example `./foo` or
+`foo.js` instead of just `foo`; otherwise it is recognized as an alias. Here a
+simple relation example:
 
     source/*.c Compile => obj/*.o Link -> ./hello_world
         :: all `Build the hello world program`;
@@ -275,7 +282,7 @@ There are two kind of transformations with *mekano*:
 
         *.c Compile => *.o *.d
 
-    will expand to:
+    is interpreted as:
 
         foo.c Compile -> foo.o foo.d
         bar.c Compile -> bar.o bar.d
@@ -289,6 +296,8 @@ different results. Prerequisite patterns expand from two sources:
   * other relations' targets matching the pattern.
 
 [Minimatch](https://github.com/isaacs/minimatch) is used to match the files.
+A prerequisite pattern never matches the targets of the same transformation;
+for example, `dist/*.js Minify => dist/*.min.js` does not create a cycle.
 
 Patterns as targets can only appear right of generative transformations. For
 each prerequisite found, *mekano* performs a pattern transposition. Currently
@@ -310,8 +319,8 @@ Value bind grammar is as below:
     bind = value-name, "=", interpolation, ";"
     value-name = identifier
 
-A value cannot be unbound or overridden. Interpolations can refer to existing
-values with `$name` or `$(name)`. Example:
+A value cannot be unbound or overridden, but can be rebound in inner scopes.
+Interpolations can refer to existing values with `$name` or `$(name)`. Example:
 
     bin = `node_module/.bin`;
     coffee = `$bin/coffee`;
@@ -323,8 +332,9 @@ circular references.
 File update
 -----------
 
-Once the mekanofile has been interpreted, *mekano* executes the steps below.
+Once the mekanofile has been read, *mekano* executes the steps below.
 
+  * Build a graph of all the files according with the relations.
   * Topologically sort the files considering their dependencies.
   * Determine the *imprint* of each file involved. The imprint is a
     [MurmurHash](http://en.wikipedia.org/wiki/MurmurHash) accounting for a
@@ -343,20 +353,23 @@ Known limitations
 It is generally planned to improve upon those limitations.
 
   * pattern transposition for generative transformations is very basic;
+  * no dependency-only prerequisites, no parsing of preprocessors dependency
+    files (eg. [`gcc -MM`](http://gcc.gnu.org/onlinedocs/gcc-4.1.1/gcc/Preprocessor-Options.html));
+  * no recipe-specific or transformation-specific binds;
   * a bug appears, for the command `watch' only, when a
-    [file is renamed](https://github.com/shama/gaze/issues/107)
+    [file is renamed](https://github.com/shama/gaze/issues/107).
+
+See also the [ROADMAP](./ROADMAP.md).
 
 Trivia
 ------
 
 ### Why using this instead of make?
 
-  * It is simpler to set up transformation of multiple files, with no need to
-    write a list of files or use macros like `$(wildcard *.foo)`;
+  * It may be simpler to set up transformation of multiple files, with no need
+    to write a list of files or use macros like `$(wildcard *.foo)`;
   * directories are handled automatically;
-  * it detects command line changes;
-  * is gives more 'sane' and strict semantics, like values instead of macros,
-    reducing error risks.
+  * it detects command line changes.
 
 ### Why using this instead of grunt?
 
@@ -367,7 +380,7 @@ Trivia
 ### Why *not* using mekano?
 
   * too high-level, you have specific dependency needs;
-  * no logic, no 'if';
+  * no logic, no 'if', or too limited semantics;
   * might be too slow for medium or large projects.
 
 ### Why not reusing the make syntax?

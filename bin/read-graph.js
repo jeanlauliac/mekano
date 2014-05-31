@@ -45,17 +45,18 @@ function readGraph(manifestPath, logPath, argv) {
 function getGraph(logPath, data) {
     var ev = new EventEmitter()
     data.recipes = data.unit.recipes
-    try { data.scope = Scope.fromBinds(data.unit.binds, data.cliScope) }
-    catch (err) {
-        if (err.name !== 'BindError') throw err
-        ev.emit('error', err)
-        return ev.emit('finish')
-    }
-    getLog(logPath, function (err, log) {
-        if (err) return helpers.bailoutEv(ev, err)
-        data.log = log
-        forwardEvents(ev, refreshGraph(data), function () {
-            ev.emit('finish', data)
+    process.nextTick(function () {
+        try { data.scope = Scope.fromBinds(data.unit.binds, data.cliScope) }
+        catch (err) {
+            if (err.name !== 'BindError') throw err
+            return helpers.bailoutEv(ev, err)
+        }
+        getLog(logPath, function (err, log) {
+            if (err) return helpers.bailoutEv(ev, err)
+            data.log = log
+            forwardEvents(ev, refreshGraph(data), function () {
+                ev.emit('finish', data)
+            })
         })
     })
     return ev

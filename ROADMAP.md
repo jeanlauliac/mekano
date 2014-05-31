@@ -46,3 +46,8 @@ Fancy features to add:
             Coffee => Concat -> dist/concat.js;
 
     The compiled JS files, in this case, are auto-named and placed in .mekano/.
+
+  * Inside aliases:
+
+        src/**/*.coffee :: sources
+            Coffee => build/**/*.js
