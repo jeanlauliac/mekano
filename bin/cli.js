@@ -28,6 +28,9 @@ function main() {
         console.error(util.format('unknow command `%s\'', cmdAbbr))
         return 1
     }
+    process.stdout.on('error', function (err) {
+        if (err.code !== 'EPIPE') throw err
+    })
     var ev = Commands[command](opts)
     var errored = false
     var finished = false

@@ -9,6 +9,7 @@ var path = require('path')
 var mkdirp = require('mkdirp')
 var exec = require('child_process').exec
 var EventEmitter = require('events').EventEmitter
+var Task = require('../lib/task')
 var queuedFnOf = require('../lib/queued-fn-of')
 var runEdges = require('../lib/update/run-edges')
 var forwardEvents = require('../lib/forward-events')
@@ -16,12 +17,21 @@ var Output = require('./output')
 var common = require('./common')
 var helpers = require('./helpers')
 
+require('longjohn')
+
 var SOME_UTD = 'Those are already up-to-date: %s.'
+
+var SIGS = ['SIGINT', 'SIGHUP', 'SIGTERM', 'SIGQUIT']
 
 function updateGraph(data, opts) {
     if (!opts) opts = {}
     var ev = new EventEmitter()
-    forwardEvents(ev, update(data, opts), function () {
+    var uev = update(data, opts)
+    var sigInfo = registerSigs(uev, function onQuitSignal() {
+        uev.abort()
+    })
+    forwardEvents(ev, uev, function () {
+        unregisterSigs(sigInfo)
         if (opts['dry-run']) return ev.emit('finish')
         mkdirp(path.dirname(common.LOG_PATH), function (err) {
             if (err) return helpers.bailoutEv(ev, err)
@@ -34,8 +44,25 @@ function updateGraph(data, opts) {
     return ev
 }
 
+function registerSigs(uev, fn) {
+    var info = {fn: fn}
+    SIGS.forEach(function (sig) { process.on(sig, info.fn) })
+    info.pipeFn = function (err) {
+        if (err.code !== 'EPIPE') throw err
+        return info.fn()
+    }
+    process.stdout.on('error', info.pipeFn)
+    return info
+}
+
+function unregisterSigs(info) {
+    SIGS.forEach(function (sig) { process.removeListener(sig, info.fn) })
+    process.stdout.removeListener('error', info.pipeFn)
+}
+
 function update(data, opts) {
-    var ev = new EventEmitter()
+    var res
+    var ev = new Task(function () { if (!res) return; res.abort() })
     if (opts['robot']) console.log(' e %d', data.edges.length)
     if (data.edges.length === 0) return alreadyUpToDate(ev, data, opts)
     var st = {data: data, runCount: 0, opts: opts
@@ -44,7 +71,7 @@ function update(data, opts) {
     var reFn = opts['dry-run'] ? dryRunEdge : runEdge
     var re = queuedFnOf(reFn.bind(null, st), os.cpus().length)
     st.updateMessage(st, null)
-    var res = runEdges(data.edges, re)
+    res = runEdges(data.edges, re)
     return forwardEvents(ev, res, function (errored) {
         st.output.endUpdate()
         if (!errored) {
@@ -82,24 +109,26 @@ function dryRunEdge(st, edge, cb) {
 
 function runEdge(st, edge, cb) {
     var cmd = st.data.cmds[edge.index]
-    mkEdgeDirs(st, edge, function (err) {
-        if (err) return cb(err)
-        exec(cmd, function (err, stdout, stderr) {
-            if (!err) st.runCount++
-            st.updateMessage(st, edge)
-            if (stdout.length > 0 || stderr.length > 0) {
-                st.output.endUpdate()
-                process.stdout.write(stdout)
-                process.stderr.write(stderr)
-            }
-            if (err)
-                return cb(new Error(util.format('command failed: %s', cmd)))
-            edge.outFiles.forEach(function (file) {
-                st.data.log.update(file.path, st.data.imps[file.path])
+    setTimeout(function () {
+        mkEdgeDirs(st, edge, function (err) {
+            if (err) return cb(err)
+            exec(cmd, function (err, stdout, stderr) {
+                if (!err) st.runCount++
+                st.updateMessage(st, edge)
+                if (stdout.length > 0 || stderr.length > 0) {
+                    st.output.endUpdate()
+                    process.stdout.write(stdout)
+                    process.stderr.write(stderr)
+                }
+                if (err)
+                    return cb(new Error(util.format('command failed: %s', cmd)))
+                edge.outFiles.forEach(function (file) {
+                    st.data.log.update(file.path, st.data.imps[file.path])
+                })
+                return cb(null)
             })
-            return cb(null)
         })
-    })
+    }, 1000)
 }
 
 function mkEdgeDirs(st, edge, cb) {
