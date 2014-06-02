@@ -34,15 +34,17 @@ function main() {
     var ev = Commands[command](opts)
     var errored = false
     var finished = false
+    var signal = null
     ev.on('error', function (err) {
         log('error', err)
+        if (err.signal) signal = err.signal
         errored = true
     }).on('warning', function (err) {
         log('warning', err)
     }).on('finish', function () {
         finished = true
-        if (errored)
-            process.exit(1)
+        if (signal) return process.kill(process.pid, signal)
+        if (errored) return process.exit(1)
         process.exit(0)
     })
     process.on('exit', function () {

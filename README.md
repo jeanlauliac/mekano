@@ -172,8 +172,12 @@ Without the option **-f**, *mekano* looks in sequence for the files
 The standard output reports the recipes being executed as well as the completion
 percentage. The **-r** option makes the output more easily parseable.
 
-If any of the SIGHUP, SIGTERM, SIGINT, and SIGQUIT signals is received, the
-tool returns cleanly and keeps track of updated files so far.
+If any of the SIGHUP, SIGTERM, and SIGQUIT signals is received, the
+tool stops updating but keeps track of updated files so far. However, it does
+not kill the running sub-processes. If SIGINT is received, it follows a
+[*"wait and cooperative exit"* (WCE)](http://www.cons.org/cracauer/sigint.html)
+stategy; it waits for processes to complete, and stops only if they ended on
+SIGINT themselves.
 
 At the moment, Mekano cannot update the Mekanofile itself and take account of it
 in a single run (with a relation such as `Mekanofile.in M4 -> Mekanofile`). This

@@ -3,6 +3,7 @@ bin = `node_modules/.bin`;
 Concat: `cat $in > $out`;
 Coffee: `$bin/coffee -cp $in > $out`;
 Minify: `$bin/uglifyjs < $in > $out`;
+SlowOp: `node slow-op.js > $out`;
 
 src/**/*.coffee
     Coffee => build/**/*.js
@@ -11,3 +12,8 @@ src/**/*.coffee
 dist/*.js
     Minify => dist/*.min.js
     :: all `Update all files`;
+
+SlowOp -> dist/slow-op-result;
+SlowOp -> dist/slow-op-result2;
+
+dist/slow-op-result dist/slow-op-result2 :: slow;

@@ -9,7 +9,6 @@ var path = require('path')
 var mkdirp = require('mkdirp')
 var exec = require('child_process').exec
 var EventEmitter = require('events').EventEmitter
-var Task = require('../lib/task')
 var queuedFnOf = require('../lib/queued-fn-of')
 var runEdges = require('../lib/update/run-edges')
 var forwardEvents = require('../lib/forward-events')
@@ -17,9 +16,9 @@ var Output = require('./output')
 var common = require('./common')
 var helpers = require('./helpers')
 
-require('longjohn')
-
 var SOME_UTD = 'Those are already up-to-date: %s.'
+var CMD_FAIL = 'command failed, code %d: %s'
+var CMD_SIGFAIL = 'command failed, signal %s: %s'
 
 var SIGS = ['SIGINT', 'SIGHUP', 'SIGTERM', 'SIGQUIT']
 
@@ -27,8 +26,8 @@ function updateGraph(data, opts) {
     if (!opts) opts = {}
     var ev = new EventEmitter()
     var uev = update(data, opts)
-    var sigInfo = registerSigs(uev, function onQuitSignal() {
-        uev.abort()
+    var sigInfo = registerSigs(function onSignal(signal) {
+        uev.emit('signal', signal)
     })
     forwardEvents(ev, uev, function () {
         unregisterSigs(sigInfo)
@@ -44,34 +43,27 @@ function updateGraph(data, opts) {
     return ev
 }
 
-function registerSigs(uev, fn) {
-    var info = {fn: fn}
-    SIGS.forEach(function (sig) { process.on(sig, info.fn) })
-    info.pipeFn = function (err) {
-        if (err.code !== 'EPIPE') throw err
-        return info.fn()
-    }
-    process.stdout.on('error', info.pipeFn)
-    return info
-}
-
-function unregisterSigs(info) {
-    SIGS.forEach(function (sig) { process.removeListener(sig, info.fn) })
-    process.stdout.removeListener('error', info.pipeFn)
-}
-
 function update(data, opts) {
     var res
-    var ev = new Task(function () { if (!res) return; res.abort() })
+    var ev = new EventEmitter()
     if (opts['robot']) console.log(' e %d', data.edges.length)
     if (data.edges.length === 0) return alreadyUpToDate(ev, data, opts)
     var st = {data: data, runCount: 0, opts: opts
+            , sigints: {}, stopFns: {}
             , dirs: {}, output: new Output(opts['dry-run'])}
     st.updateMessage = opts['robot'] ? updateRobotMessage : updateMessage
     var reFn = opts['dry-run'] ? dryRunEdge : runEdge
     var re = queuedFnOf(reFn.bind(null, st), os.cpus().length)
     st.updateMessage(st, null)
     res = runEdges(data.edges, re)
+    ev.on('signal', function (signal) {
+        if (signal !== 'SIGINT') {
+            res.emit('signal', signal)
+            for (var j in st.stopFns) st.stopFns[j]()
+            return
+        }
+        for (var i in st.sigints) st.sigints[i] = true
+    })
     return forwardEvents(ev, res, function (errored) {
         st.output.endUpdate()
         if (!errored) {
@@ -80,6 +72,55 @@ function update(data, opts) {
         }
         ev.emit('finish')
     }, function () { st.output.endUpdate() })
+}
+
+function runEdge(st, edge, cb) {
+    st.sigints[edge.index] = false
+    var cmd = st.data.cmds[edge.index]
+    mkEdgeDirs(st, edge, function (err) {
+        if (err) return cb(err)
+        var stopped = false
+        exec(cmd, function (err, stdout, stderr) {
+            if (stopped) return
+            delete st.stopFns[edge.index]
+            var sigint = st.sigints[edge.index]
+            delete st.sigints[edge.index]
+            if (!err) st.runCount++
+            st.updateMessage(st, edge)
+            if (stdout.length > 0 || stderr.length > 0) {
+                st.output.endUpdate()
+                process.stdout.write(stdout)
+                process.stderr.write(stderr)
+            }
+            if (err) {
+                var message
+                if (err.code) message = util.format(CMD_FAIL, err.code, cmd)
+                else message = util.format(CMD_SIGFAIL, err.signal, cmd)
+                var nerr = new Error(message)
+                if (err.signal === 'SIGINT' && sigint)
+                    nerr.signal = 'SIGINT'
+                return cb(nerr)
+            }
+            edge.outFiles.forEach(function (file) {
+                st.data.log.update(file.path, st.data.imps[file.path])
+            })
+            return cb(null)
+        })
+        st.stopFns[edge.index] = function stopRunEdge () {
+            delete st.stopFns[edge.index]
+            stopped = true
+            st.updateMessage(st, edge)
+            return cb(new Error('aborting, recipe process will detach'))
+        }
+    })
+}
+
+function dryRunEdge(st, edge, cb) {
+    process.nextTick(function () {
+        st.runCount++
+        st.updateMessage(st, edge)
+        return cb(null)
+    })
 }
 
 function alreadyUpToDate(ev, data, opts) {
@@ -99,36 +140,19 @@ function alreadyUpToDate(ev, data, opts) {
     return ev
 }
 
-function dryRunEdge(st, edge, cb) {
-    process.nextTick(function () {
-        st.runCount++
-        st.updateMessage(st, edge)
-        return cb(null)
+function registerSigs(fn) {
+    var info = {sigs: {}}
+    SIGS.forEach(function (sig) {
+        var bfn = info.sigs[sig] = fn.bind(null, sig)
+        process.on(sig, bfn)
     })
+    return info
 }
 
-function runEdge(st, edge, cb) {
-    var cmd = st.data.cmds[edge.index]
-    setTimeout(function () {
-        mkEdgeDirs(st, edge, function (err) {
-            if (err) return cb(err)
-            exec(cmd, function (err, stdout, stderr) {
-                if (!err) st.runCount++
-                st.updateMessage(st, edge)
-                if (stdout.length > 0 || stderr.length > 0) {
-                    st.output.endUpdate()
-                    process.stdout.write(stdout)
-                    process.stderr.write(stderr)
-                }
-                if (err)
-                    return cb(new Error(util.format('command failed: %s', cmd)))
-                edge.outFiles.forEach(function (file) {
-                    st.data.log.update(file.path, st.data.imps[file.path])
-                })
-                return cb(null)
-            })
-        })
-    }, 1000)
+function unregisterSigs(info) {
+    SIGS.forEach(function (sig) {
+        process.removeListener(sig, info.sigs[sig])
+    })
 }
 
 function mkEdgeDirs(st, edge, cb) {
