@@ -8,7 +8,7 @@ var forwardEvents = require('../lib/forward-events')
 
 function status(opts) {
     var ev = new EventEmitter()
-    var rg = readGraph(opts.file, common.LOG_PATH)
+    var rg = readGraph(opts.file, common.LOG_PATH, opts.argv.remain)
     return forwardEvents(ev, rg, function (errored, data) {
         if (errored) return ev.emit('finish')
         showStatus(data)
