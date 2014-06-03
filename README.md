@@ -155,7 +155,7 @@ General options:
 
   * `-y, --shy` Stop an update as soon as an error occurs. By default,
     the update continues to get a maximum of errors at once.
-  * `-n, --dry-run`` Output commands that would be run. No target is updated
+  * `-n, --dry-run` Output commands that would be run. No target is updated
     nor deleted.
   * `-f, --file <mekanofile>` Specify a different mekanofile. If `-` is
     specified, the standard input is used.

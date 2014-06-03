@@ -70,11 +70,7 @@ Commands.update = require('./update')
 Commands.watch = require('./watch')
 Commands.status = require('./status')
 Commands.aliases = require('./aliases')
-
-Commands.clean = function () {
-
-}
-
+Commands.clean = require('./clean')
 
 Commands.trace = function () {
 

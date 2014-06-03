@@ -46,8 +46,9 @@ function printAliases(aliases) {
     }
     for (name in aliases) {
         if (!aliases.hasOwnProperty(name)) continue
-        console.log('    %s  %s', helpers.padRight(name, max)
-                  , aliases[name].ast.desc)
+        var desc = aliases[name].ast.desc
+        if (desc === null) desc = ''
+        console.log('    %s  %s', helpers.padRight(name, max), desc)
     }
     console.log()
 }
