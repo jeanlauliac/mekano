@@ -16,18 +16,18 @@ var DELAY_MS = 500
 
 function watch(opts) {
     var ev = new EventEmitter()
-    var rg = readGraph(opts.file, common.LOG_PATH)
+    var rg = readGraph(opts.file, common.LOG_PATH, opts.argv.remain)
     forwardEvents(ev, rg, function graphRead(errored, data) {
         if (errored) return ev.emit('finish')
         var ug = updateGraph(data, opts)
         forwardEvents(ev, ug, function graphUpdated() {
-            forwardEvents(ev, watchAndUpdate(data))
+            forwardEvents(ev, watchAndUpdate(data, opts))
         })
     })
     return ev
 }
 
-function watchAndUpdate(data) {
+function watchAndUpdate(data, opts) {
     var ev = new EventEmitter()
     var patterns = getSourcePatterns(data.transs)
     var truce = false
@@ -45,6 +45,7 @@ function watchAndUpdate(data) {
     }, DELAY_MS)
     gaze(patterns, function (err) {
         if (err) return helpers.bailoutEv(ev, err)
+        if (!opts.robot) console.error('Watching...')
         this.on('all', function (event, filePath) {
             if (truce) return
             truce = true

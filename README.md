@@ -109,11 +109,13 @@ Install
 
 **Important:** you need node v0.10 or higher to run this program.
 
-    npm install mekano
+    $ npm install mekano
 
 The tool will be available as `node_modules/.bin/mekano`. It is not recommended
-to install it globally, because different projects may need different major
-and incompatible versions.
+to install it globally, because different projects may need different,
+incompatible versions (of course, [semver](http://semver.org/) is used). Is
+**is** recommended, however, to add it to your project's `package.json` (just
+use npm's [`--save` option](https://www.npmjs.org/doc/cli/npm-install.html)).
 
 To avoid typing the path every time when installed locally, one decent solution
 is to create an alias, if your shell supports it. For example:
@@ -132,57 +134,59 @@ Usage
 
 Commands:
 
-  * **update** Update the specified targets. The whole project is updated if no
+  * `update` Update the specified targets. The whole project is updated if no
     target is specified.
-  * **watch** Keep updating files until a signal is caught. It watches files and
+  * `watch` Keep updating files until a signal is caught. It watches files and
     updates targets when prerequisites change. If the Mekanofile itself changes,
     you need to relaunch mekano manually.
-  * **status** Display the modified files and dirty targets. No target is
-    updated. If **--silent** is specified, return a zero exit value if the
+  * `status` Display the modified files and dirty targets. No target is
+    updated. If `--silent` is specified, return a zero exit value if the
     targets are up to date; otherwise, return 1.
-  * **clean** Remove the specified and dependent targets. For example, with the
+  * `clean` Remove the specified and dependent targets. For example, with the
     above Mekanofile, `clean dist/concat.js` will remove this file and the
     minified one. All generated files are removed if no target is specified.
-  * **aliases** Display a list of the defined aliases.
-  * **print** *type* Display the mekanofile interpretation. Types:
-      * **manifest** Output the mekanofile as it had been parsed.
-      * **dot** Output the file graph in the graphviz dot format.
-  * **help** Display mekano own help.
+  * `aliases` Display a list of the defined aliases.
+  * `print <type>` Display the mekanofile interpretation. Types:
+      * `manifest` Output the mekanofile as it had been parsed.
+      * `dot` Output the file graph in the graphviz dot format.
+  * `help` Display mekano own help.
 
 General options:
 
-  * **-y, --shy** Stop an update as soon as an error occurs. By default,
+  * `-y, --shy` Stop an update as soon as an error occurs. By default,
     the update continues to get a maximum of errors at once.
-  * **-n, --dry-run** Output commands that would be run. No target is updated
+  * `-n, --dry-run`` Output commands that would be run. No target is updated
     nor deleted.
-  * **-f, --file** *mekanofile* Specify a different mekanofile. If '-' is
+  * `-f, --file <mekanofile>` Specify a different mekanofile. If `-` is
     specified, the standard input is used.
-  * **-r, --robot** Output machine-parseable text.
-  * **-s, --silent** Be silent: don't write executed commands.
-  * **-F, --force** Force things, like overwriting modified files. Dangerous.
-  * **-v, --version** Output version and exit.
+  * `-r, --robot` Output machine-parseable text.
+  * `-s, --silent` Be silent: don't write executed commands.
+  * `-F, --force` Force things, like overwriting modified files. Dangerous.
+  * `-v, --version` Output version and exit.
 
 Binds and target names can be mixed on the command-line, but targets are always
 evaluated last. Values cannot refer to values declared inside the mekanofile,
 but the contrary is possible.
 
-Without the option **-f**, *mekano* looks in sequence for the files
-**./Mekanofile** and **./mekanofile**. The first found is read.
+Without the option `-f`, *mekano* looks in sequence for the files
+`./Mekanofile` and `./mekanofile`. The first found is read.
 
 The standard output reports the recipes being executed as well as the completion
-percentage. The **-r** option makes the output more easily parseable.
+percentage. The `-r` option makes the output more easily parseable.
 
-If any of the SIGHUP, SIGTERM, and SIGQUIT signals is received, the
-tool stops updating but keeps track of updated files so far. However, it does
-not kill the running sub-processes. If SIGINT is received, it follows a
+If any of the SIGHUP, SIGTERM, and SIGQUIT signals is received, the tool stops
+updating but keeps track of updated files so far. However, it does not kill the
+running sub-processes. If SIGINT (generally Ctrl+C) is received, it follows a
 [*"wait and cooperative exit"* (WCE)](http://www.cons.org/cracauer/sigint.html)
 stategy; it waits for processes to complete, and stops only if they ended on
-SIGINT themselves.
+SIGINT themselves. In **watch** mode, SIGINT only stops the update, if any; a
+second SIGINT may be needed to quit.
 
-At the moment, Mekano cannot update the Mekanofile itself and take account of it
-in a single run (with a relation such as `Mekanofile.in M4 -> Mekanofile`). This
-is because it won't reload the Mekanofile after its update. You need to run it
-twice in this case. This will be improved in the future.
+At the moment, Mekano cannot update the Mekanofile itself **and** take account
+of it in a single run (with a relation such as
+`Mekanofile.in M4 -> Mekanofile`). This is because it won't reload the
+Mekanofile after its update. You need to run it twice in this case. This will be
+improved in the future.
 
 Syntax
 ------
@@ -204,10 +208,9 @@ syntax purely declarative.
 Recipe grammar (in [EBNF](http://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_Form))
 is as below:
 
-    recipe = recipe-name, ":", command, bind-list, ";" ;
+    recipe = recipe-name, ":", command, ";" ;
     recipe-name = identifier ;
     command = interpolation ;
-    bind-list = [ "{", { bind } , "}" ]
     identifier = { ? A-Z, a-z, 0-9, '-' or '_' ? }
     interpolation = "`", ? any character ?, "`" ;
 
@@ -224,14 +227,8 @@ character when escaped as `` $` ``. `$$` yields a single dollar sign. Command
 lines can refer to bound values with `$name` or `$(name)`. The following values
 are automatically available during recipe evaluation:
 
-  * **in** Space-separated shell-quoted list of the input file(s).
-  * **out** Space-separated shell-quoted list of the output file(s).
-
-<!--
-A recipe can also bind local values with braces, for example:
-
-    Compile: `$cc -c $in -o $out` { cc = `gcc $cflags` };
--->
+  * `in` Space-separated shell-quoted list of the input file(s).
+  * `out` Space-separated shell-quoted list of the output file(s).
 
 Command lines are evaluated by the local shell, typically with `sh -c`.
 'UpperCamel' case is suggested for naming recipes. Recipes can appear anywhere
@@ -242,7 +239,7 @@ in the mekanofile, either after or before the relations referring to it.
 Relation grammar is as below:
 
     relation = ref-list, { transformation }, [ alias ], ";"
-    transformation = recipe-name, ( "=>" | "->" ), ref-list, bind-list
+    transformation = recipe-name, ( "=>" | "->" ), ref-list
     alias = "::", alias-name, [ alias-description ]
     ref-list = { path | path-glob | alias-name }
     alias-name = identifier
@@ -381,18 +378,22 @@ Trivia
   * It may be simpler to set up transformation of multiple files, with no need
     to write a list of files or use macros like `$(wildcard *.foo)`;
   * directories are handled automatically;
-  * it detects command line changes.
+  * it detects command line changes;
+  * if can watch files out-of-the-box;
+  * it also runs concurrently (GNU Make's `-j` option).
 
 ### Why using this instead of grunt?
 
   * Minimal updates: files that did not change do not trigger update;
   * no plugin system, you can use tools from any package, in any version; 'less
-    is more' applies pretty well to this case.
+    is more' applies pretty well to this case;
+  * concurrency.
 
 ### Why *not* using mekano?
 
+  * it's still in beta and may be unstable;
   * too high-level, you have specific dependency needs;
-  * no logic, no 'if', or too limited semantics;
+  * no logic, no 'if', limited semantics;
   * might be too slow for medium or large projects.
 
 ### Why not reusing the make syntax?
@@ -402,13 +403,13 @@ The classic *make* syntax "targets: prerequisites" is not employed because:
   * it may not be very clear how to express transformation chains (something
     like `foo: bar: glo`?);
   * inference is done the other way around than *make* (it infers targets based
-    on prerequisites; make does the contrary with rules like `%.o: %c`).
+    on prerequisites; make does the opposite with rules like `%.o: %c`).
 
 ### Shout out
 
 To the masters from which *mekano* is inspired:
 
   * the historic [GNU make](http://www.gnu.org/software/make/manual/make.html);
-  * the super-fast [Ninja](http://martine.github.io/ninja/);
-  * the insightful [tup](http://gittup.org/tup/);
-  * the pragmatic [grunt](http://gruntjs.com/).
+  * the fast [Ninja](http://martine.github.io/ninja/);
+  * the cutting-edge [tup](http://gittup.org/tup/);
+  * the down-to-earth [grunt](http://gruntjs.com/).
