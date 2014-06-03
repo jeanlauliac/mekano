@@ -351,6 +351,13 @@ Once the mekanofile has been read, *mekano* executes the steps below.
 Any output directory containing targets is automatically created by *mekano*
 during the update.
 
+The update log is located in `.mekano/log.json` and contains the imprint of
+each generated file. **Never delete the log file!** To do a whole rebuild, use
+the **clean** command instead. If you delete the log, bad things will
+happen, because *mekano* will consider all the generated files so far as
+sources. This means, for example, that minified files (`foo.min.js`) will be
+minified again (`foo.min.min.js`).
+
 Known limitations
 ----------------
 
@@ -361,7 +368,8 @@ It is generally planned to improve upon those limitations.
     files (eg. [`gcc -MM`](http://gcc.gnu.org/onlinedocs/gcc-4.1.1/gcc/Preprocessor-Options.html));
   * no recipe-specific or transformation-specific binds;
   * a bug appears, for the command `watch' only, when a
-    [file is renamed](https://github.com/shama/gaze/issues/107).
+    [file is renamed](https://github.com/shama/gaze/issues/107);
+  * generative transformations accept only one pattern prerequisite.
 
 See also the [ROADMAP](./ROADMAP.md).
 

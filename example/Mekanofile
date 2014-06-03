@@ -6,7 +6,9 @@ Minify: `$bin/uglifyjs < $in > $out`;
 SlowOp: `node slow-op.js > $out`;
 
 src/**/*.coffee
-    Coffee => build/**/*.js
+    Coffee => build/**/*.js;
+
+{src,build}/**/*.js
     Concat -> dist/concat.js;
 
 dist/*.js
