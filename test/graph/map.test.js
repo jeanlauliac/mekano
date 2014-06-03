@@ -54,8 +54,8 @@ test('graph.map() globs', function (t) {
     ev.on('finish', function testGraph(graph) {
         var fooObj = graph.getFileByPath('foo.o')
         t.equal(fooObj.inEdge.inFiles.length, 2)
-        t.equal(fooObj.inEdge.inFiles[0].path, 'foo.c')
-        t.equal(fooObj.inEdge.inFiles[1].path, 'bar.c')
+        t.equal(fooObj.inEdge.inFiles[0].path, 'bar.c')
+        t.equal(fooObj.inEdge.inFiles[1].path, 'foo.c')
         t.equal(fooObj.outEdges.length, 1)
         t.equal(fooObj.outEdges[0].outFiles.length, 1)
         t.equal(fooObj.outEdges[0].outFiles[0].path, 'a.out')
@@ -99,6 +99,6 @@ function testGlob(pattern, opts, cb) {
         return process.nextTick(cb.bind(null, null, ['foo.c', 'bar.c']))
     if (pattern === '*.o')
         return process.nextTick(cb.bind(null, null
-                                      , ['foo.c', 'bar.c', 'old.o']))
+                                      , ['foo.o', 'bar.o', 'old.o']))
     return process.nextTick(cb.bind(null, null, []))
 }
