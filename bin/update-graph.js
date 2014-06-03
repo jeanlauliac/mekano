@@ -15,6 +15,7 @@ var forwardEvents = require('../lib/forward-events')
 var Output = require('./output')
 var common = require('./common')
 var helpers = require('./helpers')
+var errors = require('../lib/errors')
 
 var SOME_UTD = 'Those are already up-to-date: %s.'
 var CMD_FAIL = 'command failed, code %d: %s'
@@ -25,18 +26,21 @@ var SIGS = ['SIGINT', 'SIGHUP', 'SIGTERM', 'SIGQUIT']
 function updateGraph(data, opts) {
     if (!opts) opts = {}
     var ev = new EventEmitter()
-    var uev = update(data, opts)
-    var sigInfo = registerSigs(function onSignal(signal) {
-        uev.emit('signal', signal)
-    })
-    forwardEvents(ev, uev, function () {
-        unregisterSigs(sigInfo)
-        if (opts['dry-run']) return ev.emit('finish')
-        mkdirp(path.dirname(common.LOG_PATH), function (err) {
-            if (err) return helpers.bailoutEv(ev, err)
-            var s = data.log.save(fs.createWriteStream(common.LOG_PATH))
-            s.end(function () {
-                ev.emit('finish')
+    unlinkOrphans(data, opts, function (err) {
+        if (err) return helpers.bailoutEv(ev, err)
+        var uev = update(data, opts)
+        var sigInfo = registerSigs(function onSignal(signal) {
+            uev.emit('signal', signal)
+        })
+        forwardEvents(ev, uev, function () {
+            unregisterSigs(sigInfo)
+            if (opts['dry-run']) return ev.emit('finish')
+            mkdirp(path.dirname(common.LOG_PATH), function (err) {
+                if (err) return helpers.bailoutEv(ev, err)
+                var s = data.log.save(fs.createWriteStream(common.LOG_PATH))
+                s.end(function () {
+                    ev.emit('finish')
+                })
             })
         })
     })
@@ -121,6 +125,25 @@ function dryRunEdge(st, edge, cb) {
         st.updateMessage(st, edge)
         return cb(null)
     })
+}
+
+function unlinkOrphans(data, opts, cb) {
+    if (typeof cb !== 'function') throw errors.invalidArg('cb', cb)
+    var orphans = data.log.getPaths().filter(function (filePath) {
+        var file = data.graph.getFile(filePath)
+        return file === null
+    })
+    if (orphans.length === 0) return process.nextTick(cb.bind(null, null))
+    ;(function next(i) {
+        if (i === orphans.length) return cb(null)
+        fs.unlink(orphans[i], function (err) {
+            if (err) return cb(err)
+            if (!opts.robot)
+                console.log(util.format('Removing orphan `%s\'.', orphans[i]))
+            data.log.forget(orphans[i])
+            return next(i + 1)
+        })
+    })(0)
 }
 
 function alreadyUpToDate(ev, data, opts) {
