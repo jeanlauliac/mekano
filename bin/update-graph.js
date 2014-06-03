@@ -20,6 +20,8 @@ var errors = require('../lib/errors')
 var SOME_UTD = 'Those are already up-to-date: %s.'
 var CMD_FAIL = 'command failed, code %d: %s'
 var CMD_SIGFAIL = 'command failed, signal %s: %s'
+var DRY_REM_ORPHAN = 'Would remove orphan `%s\'.'
+var REM_ORPHAN = 'Removing orphan `%s\'.'
 
 var SIGS = ['SIGINT', 'SIGHUP', 'SIGTERM', 'SIGQUIT']
 
@@ -134,16 +136,22 @@ function unlinkOrphans(data, opts, cb) {
         return file === null
     })
     if (orphans.length === 0) return process.nextTick(cb.bind(null, null))
+    var unlink = opts['dry-run'] ? dryUnlink : fs.unlink
+    var msgTpl = opts['dry-run'] ? DRY_REM_ORPHAN : REM_ORPHAN
     ;(function next(i) {
         if (i === orphans.length) return cb(null)
-        fs.unlink(orphans[i], function (err) {
+        unlink(orphans[i], function (err) {
             if (err) return cb(err)
             if (!opts.robot)
-                console.log(util.format('Removing orphan `%s\'.', orphans[i]))
+                console.log(util.format(msgTpl, orphans[i]))
             data.log.forget(orphans[i])
             return next(i + 1)
         })
     })(0)
+}
+
+function dryUnlink(filePath, cb) {
+    setImmediate(cb.bind(null, null))
 }
 
 function alreadyUpToDate(ev, data, opts) {
