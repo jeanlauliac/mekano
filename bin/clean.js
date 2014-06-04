@@ -8,6 +8,9 @@ var common = require('./common')
 var util = require('util')
 var fs = require('fs')
 var extractCliRefs = require('./extract-cli-refs')
+var mkdirp = require('mkdirp')
+var helpers = require('./helpers')
+var path = require('path')
 
 var DRY_REM = 'Would remove: %s'
 var REM = 'Removing: %s'
@@ -23,7 +26,17 @@ function clean(opts) {
             files = cleanSort(files, function (file) {
                 return data.log.isGenerated(file.path)
             })
-            forwardEvents(ev, cleanFiles(data, files, opts))
+            var cf = cleanFiles(data, files, opts)
+            forwardEvents(ev, cf, function cleaned() {
+                if (opts['dry-run']) return ev.emit('finish')
+                mkdirp(path.dirname(common.LOG_PATH), function (err) {
+                    if (err) return helpers.bailoutEv(ev, err)
+                    var s = data.log.save(fs.createWriteStream(common.LOG_PATH))
+                    s.end(function () {
+                        ev.emit('finish')
+                    })
+                })
+            })
         })
     })
     return ev
@@ -31,16 +44,18 @@ function clean(opts) {
 
 function cleanFiles(data, files, opts) {
     var ev = new EventEmitter()
-    if (files.length === 0) {
-        if (!opts.robot) console.log('Nothing to clean.')
-        return process.nextTick(ev.emit.bind(ev, 'finish'))
-    }
+    if (files.length === 0)
+        return alreadyClean(ev, data, opts)
     var unlink = opts['dry-run'] ? dryUnlink : fs.unlink
     var msgTpl = opts['dry-run'] ? DRY_REM : REM
+    if (opts.robot) msgTpl = opts['dry-run'] ? 'wr %s' : ' r %s'
     ;(function next(i) {
-        if (i === files.length) return ev.emit('finish')
-        if (!opts.robot)
-            console.log(util.format(msgTpl, files[i].path))
+        if (i === files.length) {
+            if (opts['robot']) console.log(' D')
+            else console.log('Done.')
+            return ev.emit('finish')
+        }
+        console.log(util.format(msgTpl, files[i].path))
         unlink(files[i].path, function (err) {
             if (err) {
                 ev.emit('error', err)
@@ -50,6 +65,23 @@ function cleanFiles(data, files, opts) {
             return next(i + 1)
         })
     })(0)
+    return ev
+}
+
+function alreadyClean(ev, data, opts) {
+    if (opts['robot']) {
+        console.log(' D')
+    } else {
+        if (data.cliRefs.length === 0) {
+            console.log('Nothing to clean.')
+        } else {
+            var list = data.cliRefs.map(function (ref) {
+                return ref.value
+            }).join(', ')
+            console.log(util.format('Those are clean: %s', list))
+        }
+    }
+    process.nextTick(ev.emit.bind(ev, 'finish'))
     return ev
 }
 
