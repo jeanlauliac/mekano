@@ -3,7 +3,7 @@ Roadmap
 
 Fancy features to add:
 
-  * a `foreach` keyword expanding for each prerequisite, for example:
+  * A `foreach` keyword expanding for each prerequisite, for example:
 
         foreach(foo.c bar.c) lib.h Compile -> foo.o bar.o foo.d bar.d
 
@@ -12,15 +12,15 @@ Fancy features to add:
         foo.c lib.h Compile -> foo.o foo.d
         bar.c lib.h Compile -> bar.o bar.d
 
-  * a `onlywith` keyword. This:
+  * An `onlywith` keyword. This:
 
         *.c onlywith foo.c bar.c => *.o
 
     would only expand the fat arrow for the specified files.
 
-  * an `except` keyword, the inverse of `onlywith`.
+  * An `except` keyword, the inverse of `onlywith`.
 
-  * a `final` keyword, indicating that a globbing pattern expansion must not be
+  * A `final` keyword, indicating that a globbing pattern expansion must not be
     propagated further. That would be useful to break dependency cycles. For
     example:
 
@@ -29,6 +29,10 @@ Fancy features to add:
 
     In this case, no `*.gen.coffee` is not matched by the first rule, even if it
     exists on disk.
+
+  * Local bind scopes:
+
+        Coffee: `$cf < $in > $out` { cf = `$coffee -cp` };
 
   * Implicit dependencies, accounted for as dependencies but not included in the
     $in value:

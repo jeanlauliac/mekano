@@ -255,6 +255,10 @@ simple relation example:
     source/*.c Compile => obj/*.o Link -> ./hello_world
         :: all `Build the hello world program`;
 
+It means: *"takes all the C files in the `source` folder, compile them to object
+files in `obj`; then link all those into a single binary `./hello_world`. This
+binary can be referred to as the alias `all`."*
+
 #### Expansions
 
 During evaluation, multi-transformation relations are internally expanded to
@@ -311,7 +315,7 @@ For example, for a relation `src/**/*.c Compile => obj/**/*.o`, if a file
 On the other hand, a pattern like `src/**/foo/*.c` won't work properly
 because `/foo/` will be lost in the process.
 
-Generative pattern transposition is planned to be improved in the future.
+Generative pattern transposition is planned to be hugely improved in the future.
 
 ### Binds
 
@@ -386,7 +390,7 @@ Trivia
     to write a list of files or use macros like `$(wildcard *.foo)`;
   * directories are handled automatically;
   * it detects command line changes;
-  * if can watch files out-of-the-box;
+  * it can watch files out-of-the-box;
   * it also runs concurrently (GNU Make's `-j` option).
 
 ### Why using this instead of grunt?
