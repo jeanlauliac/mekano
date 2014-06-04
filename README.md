@@ -186,7 +186,8 @@ running sub-processes. If SIGINT (generally Ctrl+C) is received, it follows a
 [*"wait and cooperative exit"* (WCE)](http://www.cons.org/cracauer/sigint.html)
 stategy; it waits for processes to complete, and stops only if they ended on
 SIGINT themselves. In **watch** mode, SIGINT only stops the update, if any; a
-second SIGINT may be needed to quit.
+second SIGINT may be needed to quit. For compatibility with sloppy signal
+handlers, return code 130 is also considered a SIGINT.
 
 At the moment, Mekano cannot update the Mekanofile itself **and** take account
 of it in a single run (with a relation such as

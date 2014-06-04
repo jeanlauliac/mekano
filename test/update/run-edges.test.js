@@ -16,5 +16,5 @@ test('update.runEdges()', function (t) {
         process.nextTick(cb.bind(null, null))
         i++
     }
-    runEdges(TEST_EDGES, runEdge).on('finish', function () {})
+    runEdges(TEST_EDGES, runEdge, 4).on('finish', function () {})
 })

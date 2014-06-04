@@ -9,7 +9,6 @@ var path = require('path')
 var mkdirp = require('mkdirp')
 var exec = require('child_process').exec
 var EventEmitter = require('events').EventEmitter
-var queuedFnOf = require('../lib/queued-fn-of')
 var runEdges = require('../lib/update/run-edges')
 var forwardEvents = require('../lib/forward-events')
 var Output = require('./output')
@@ -59,9 +58,9 @@ function update(data, opts) {
             , dirs: {}, output: new Output(opts['dry-run'])}
     st.updateMessage = opts['robot'] ? updateRobotMessage : updateMessage
     var reFn = opts['dry-run'] ? dryRunEdge : runEdge
-    var re = queuedFnOf(reFn.bind(null, st), os.cpus().length)
+    var re = reFn.bind(null, st)
     st.updateMessage(st, null)
-    res = runEdges(data.edges, re)
+    res = runEdges(data.edges, re, os.cpus().length)
     ev.on('signal', function (signal) {
         if (signal !== 'SIGINT') {
             res.emit('signal', signal)
@@ -103,7 +102,7 @@ function runEdge(st, edge, cb) {
                 if (err.code) message = util.format(CMD_FAIL, err.code, cmd)
                 else message = util.format(CMD_SIGFAIL, err.signal, cmd)
                 var nerr = new Error(message)
-                if (err.signal === 'SIGINT' && sigint)
+                if ((err.signal === 'SIGINT' || err.code === 130) && sigint)
                     nerr.signal = 'SIGINT'
                 return cb(nerr)
             }
