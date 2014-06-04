@@ -64,6 +64,12 @@ In your preferred shell:
     $ ls dist
     concat.js   concat.min.js
 
+    $ mekano clean
+    Removing: dist/concat.min.js
+    Removing: dist/concat.js
+    Removing: build/foo.js
+    Removing: build/bar.js
+
 Description
 -----------
 
