@@ -71,10 +71,7 @@ Commands.watch = require('./watch')
 Commands.status = require('./status')
 Commands.aliases = require('./aliases')
 Commands.clean = require('./clean')
-
-Commands.trace = function () {
-
-}
+Commands.print = require('./print')
 
 Commands.help = function () {
     var ev = new EventEmitter()
