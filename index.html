@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Mekano by jeanlauliac</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Mekano</h1>
+        <h2>maintain, update and regenerate groups of files</h2>
+        <a href="https://github.com/jeanlauliac/mekano" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <h1>
+<a name="" class="anchor" href="#"><span class="octicon octicon-link"></span></a><img src="https://cdn.mediacru.sh/0hecryCVR3vS.svg" alt="mekano">
+</h1>
+
+<p><a href="https://travis-ci.org/jeanlauliac/mekano"><img src="https://travis-ci.org/jeanlauliac/mekano.svg?branch=master" alt="Build Status"></a></p>
+
+<p><strong>This is still an alpha version of the tool, keep in mind the current version
+is not feature-complete. Work is in progress toward that goal.</strong></p>
+
+<h2>
+<a name="synopsis" class="anchor" href="#synopsis"><span class="octicon octicon-link"></span></a>Synopsis</h2>
+
+<p><em>mekano(1)</em> – maintain, update and regenerate groups of files.</p>
+
+<p><em>mekano</em>:</p>
+
+<ul>
+<li>is a <strong>make-like update tool</strong>: you have a bunch of files in some
+directories, you want to <strong>generate other files</strong> from them, <strong>fast</strong> (no
+unnecessary work);</li>
+<li>liberally aims to <strong>lessen the frustration</strong> that can occur working with GNU
+<em>make(1)</em> on small or medium projects;</li>
+<li>tries to be balanced between <strong>speed and convenience</strong>;</li>
+<li>works <strong>best</strong> with a <strong>powerful shell</strong> (like bash &amp; co.), that it does not
+supplant;</li>
+<li>is <strong>not</strong> tied to any <strong>specific technology</strong> and may be used to compile
+C/C++, build a web application Javascript/CSS assets, or brew your
+coffee.</li>
+</ul><h2>
+<a name="example" class="anchor" href="#example"><span class="octicon octicon-link"></span></a>Example</h2>
+
+<p>In <code>./Mekanofile</code>:</p>
+
+<pre><code>bin = `node_modules/.bin`;
+
+Concat: `cat $in &gt; $out`;
+Coffee: `$bin/coffee -cp $in &gt; $out`;
+Minify: `$bin/uglifyjs &lt; $in &gt; $out`;
+
+src/**/*.coffee
+    Coffee =&gt; build/**/*.js
+    Concat -&gt; dist/concat.js;
+
+dist/*.js
+    Minify =&gt; dist/*.min.js
+    :: all `Update all files`;
+</code></pre>
+
+<p>In your preferred shell:</p>
+
+<pre><code>$ ls
+Mekanofile    src
+
+$ mekano update
+Updating...  25.0%   Coffee src/foo.coffee -&gt; build/foo.js
+Updating...  50.0%   Coffee src/bar.coffee -&gt; build/bar.js
+Updating...  75.0%   Concat build/foo.js build/bar.js -&gt; dist/concat.js
+Updating... 100.0%   Minify dist/concat.js -&gt; dist/concat.min.js
+Done.
+
+$ mekano update
+Everything is up to date.
+
+$ ls
+Mekanofile    src      build       dist        .mekano
+
+$ ls dist
+concat.js   concat.min.js
+
+$ mekano clean
+Removing: dist/concat.min.js
+Removing: dist/concat.js
+Removing: build/foo.js
+Removing: build/bar.js
+</code></pre>
+
+<h2>
+<a name="description" class="anchor" href="#description"><span class="octicon octicon-link"></span></a>Description</h2>
+
+<p><em>mekano</em> is a general-purpose update tool. It examines changes made and updates
+derived files, called the targets, from the files they are derived, called the
+prerequisites. Typical cases include (non-exhaustive):</p>
+
+<ul>
+<li>compiling a group of C/C++ files to their respective object files;</li>
+<li>linking a group of object files to a single binary;</li>
+<li>transpiling a plain JavaScript to a minified JavaScript.</li>
+</ul><p>A description file (called mekanofile, or <em>manifest</em>) contains a description of
+the relationships between files, and the commands that need to be executed to
+update the targets and reflect changes in their prerequisites.</p>
+
+<p><em>mekano</em> focuses above all on correctness and convenience, then speed. It
+properly takes account of removed and added files; tracks command-line changes;
+automatically creates output directories; runs commands concurrently; and
+attempts to provide simple semantics for dependency definitions. This tool is
+largely inspired by the
+<a href="http://pubs.opengroup.org/onlinepubs/009695399/utilities/make.html">UNIX <em>make(1)</em></a>
+utility, of which it modestly tries to be a 21th-century alternative (not a
+replacement).</p>
+
+<p><em>mekano</em> only knows how to update files. It is not well suited for so-called
+'tasks' (eg. 'test', 'publish'). Plain scripts are probably a better idea for
+those (bash, Javascript, Python…). Using
+<a href="https://www.npmjs.org/doc/misc/npm-scripts.html">npm-scripts</a> or tools like
+<a href="http://gruntjs.com/">grunt</a> is suggested as well.</p>
+
+<p>The mekanofile is generally meant to be written by hand, but there is – for now
+– very little support for update-time decision-making (no 'if', no macros).
+However, you can use a dedicaced macro or procedural language to generate
+the mekanofile, like <a href="http://www.gnu.org/software/m4/manual/m4.html">m4</a>,
+Python, Javascript…</p>
+
+<p>This specific implementation is made with JavaScript on top of Node.js, but keep
+in mind it may be usable for any purpose, from C/C++ compilation to web assets
+build. Node.js just makes it easier to be multiplatform.</p>
+
+<h2>
+<a name="install" class="anchor" href="#install"><span class="octicon octicon-link"></span></a>Install</h2>
+
+<p><strong>Important:</strong> you need node v0.10 or higher to run this program.</p>
+
+<pre><code>$ npm install mekano
+</code></pre>
+
+<p>The tool will be available as <code>node_modules/.bin/mekano</code>. It is not recommended
+to install it globally, because different projects may need different,
+incompatible versions (of course, <a href="http://semver.org/">semver</a> is used). Is
+<strong>is</strong> recommended, however, to add it to your project's <code>package.json</code> (just
+use npm's <a href="https://www.npmjs.org/doc/cli/npm-install.html"><code>--save</code> option</a>).</p>
+
+<p>To avoid typing the path every time when installed locally, one decent solution
+is to create an alias, if your shell supports it. For example:</p>
+
+<pre><code>$ alias mk=node_modules/.bin/mekano
+</code></pre>
+
+<p>If you later forget to <code>npm install</code> a project, your shell will just tell you:</p>
+
+<pre><code>$ mk update
+bash: no such file or directory: node_modules/.bin/mekano
+</code></pre>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<pre><code>mekano &lt;command&gt; [options] [bind=value...] [target_name...]
+</code></pre>
+
+<p>Commands:</p>
+
+<ul>
+<li>
+<code>update</code> Update the specified targets. The whole project is updated if no
+target is specified.</li>
+<li>
+<code>watch</code> Keep updating files until a signal is caught. It watches files and
+updates targets when prerequisites change. If the Mekanofile itself changes,
+you need to relaunch mekano manually.</li>
+<li>
+<code>status</code> Display the modified files and dirty targets. No target is
+updated. If <code>--silent</code> is specified, return a zero exit value if the
+targets are up to date; otherwise, return 1.</li>
+<li>
+<code>clean</code> Remove the specified and dependent targets. For example, with the
+above Mekanofile, <code>clean dist/concat.js</code> will remove this file and the
+minified one. All generated files are removed if no target is specified.</li>
+<li>
+<code>aliases</code> Display a list of the defined aliases.</li>
+<li>
+<code>print &lt;type&gt;</code> Display the mekanofile interpretation. Types:
+
+<ul>
+<li>
+<code>manifest</code> Output the mekanofile as it had been parsed.</li>
+<li>
+<code>dot</code> Output the file graph in the graphviz dot format.</li>
+</ul>
+</li>
+<li>
+<code>help</code> Display mekano own help.</li>
+</ul><p>General options:</p>
+
+<ul>
+<li>
+<code>-y, --shy</code> Stop an update as soon as an error occurs. By default,
+the update continues to get a maximum of errors at once.</li>
+<li>
+<code>-n, --dry-run</code> Output commands that would be run. No target is updated
+nor deleted.</li>
+<li>
+<code>-f, --file &lt;mekanofile&gt;</code> Specify a different mekanofile. If <code>-</code> is
+specified, the standard input is used.</li>
+<li>
+<code>-r, --robot</code> Output machine-parseable text.</li>
+<li>
+<code>-s, --silent</code> Be silent: don't write executed commands.</li>
+<li>
+<code>-F, --force</code> Force things, like overwriting modified files. Dangerous.</li>
+<li>
+<code>-v, --version</code> Output version and exit.</li>
+</ul><p>Binds and target names can be mixed on the command-line, but targets are always
+evaluated last. Values cannot refer to values declared inside the mekanofile,
+but the contrary is possible.</p>
+
+<p>Without the option <code>-f</code>, <em>mekano</em> looks in sequence for the files
+<code>./Mekanofile</code> and <code>./mekanofile</code>. The first found is read.</p>
+
+<p>The standard output reports the recipes being executed as well as the completion
+percentage. The <code>-r</code> option makes the output more easily parseable.</p>
+
+<p>If any of the SIGHUP, SIGTERM, and SIGQUIT signals is received, the tool stops
+updating but keeps track of updated files so far. However, it does not kill the
+running sub-processes. If SIGINT (generally Ctrl+C) is received, it follows a
+<a href="http://www.cons.org/cracauer/sigint.html"><em>"wait and cooperative exit"</em> (WCE)</a>
+stategy; it waits for processes to complete, and stops only if they ended on
+SIGINT themselves. In <strong>watch</strong> mode, SIGINT only stops the update, if any; a
+second SIGINT may be needed to quit. For compatibility with sloppy signal
+handlers, return code 130 is also considered a SIGINT.</p>
+
+<p>At the moment, Mekano cannot update the Mekanofile itself <strong>and</strong> take account
+of it in a single run (with a relation such as
+<code>Mekanofile.in M4 -&gt; Mekanofile</code>). This is because it won't reload the
+Mekanofile after its update. You need to run it twice in this case. This will be
+improved in the future.</p>
+
+<h2>
+<a name="syntax" class="anchor" href="#syntax"><span class="octicon octicon-link"></span></a>Syntax</h2>
+
+<p>A mekanofile can contain recipes, relations, and binds. Comments start with
+<code>#</code>, and end with the next new line. Whitespace is never significant is all
+other cases. Statements shall be terminated with <code>;</code>, otherwise <em>mekano</em> will
+not know the boundary between two successive relations.</p>
+
+<pre><code>unit = { recipe | relation | bind }
+</code></pre>
+
+<p>The golden rule when writing a mekanofile is that <strong>order does not matter</strong>.
+Whatever the ordering of recipes, relations and binds is, the interpretation
+will always be the same; even if glob patterns are involved. This makes the
+syntax purely declarative.</p>
+
+<h3>
+<a name="recipes" class="anchor" href="#recipes"><span class="octicon octicon-link"></span></a>Recipes</h3>
+
+<p>Recipe grammar (in <a href="http://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_Form">EBNF</a>)
+is as below:</p>
+
+<pre><code>recipe = recipe-name, ":", command, ";" ;
+recipe-name = identifier ;
+command = interpolation ;
+identifier = { ? A-Z, a-z, 0-9, '-' or '_' ? }
+interpolation = "`", ? any character ?, "`" ;
+</code></pre>
+
+<p>There can only be a single command in a recipe. However, multiple processes can
+be launched using the shell operators like <code>;</code>, <code>&amp;&amp;</code>, <code>&amp;</code>, <code>|</code> or <code>||</code>. The
+<a href="http://www.gnu.org/software/bash/manual/html_node/Pipelines.html">pipelines</a>
+are especially useful to avoid creating temporary files (if your shell supports
+it). The command can span several lines. Here a simple recipe example:</p>
+
+<pre><code>Compile: `gcc -c $in -o $out`;
+</code></pre>
+
+<p>Backticks define an <em>interpolation</em>. An interpolation can contain the backtick
+character when escaped as <code>$`</code>. <code>$$</code> yields a single dollar sign. Command
+lines can refer to bound values with <code>$name</code> or <code>$(name)</code>. The following values
+are automatically available during recipe evaluation:</p>
+
+<ul>
+<li>
+<code>in</code> Space-separated shell-quoted list of the input file(s).</li>
+<li>
+<code>out</code> Space-separated shell-quoted list of the output file(s).</li>
+</ul><p>Command lines are evaluated by the local shell, typically with <code>sh -c</code>.
+'UpperCamel' case is suggested for naming recipes. Recipes can appear anywhere
+in the mekanofile, either after or before the relations referring to it.</p>
+
+<h3>
+<a name="relations" class="anchor" href="#relations"><span class="octicon octicon-link"></span></a>Relations</h3>
+
+<p>Relation grammar is as below:</p>
+
+<pre><code>relation = ref-list, { transformation }, [ alias ], ";"
+transformation = recipe-name, ( "=&gt;" | "-&gt;" ), ref-list
+alias = "::", alias-name, [ alias-description ]
+ref-list = { path | path-glob | alias-name }
+alias-name = identifier
+alias-description = interpolation
+path = { ? alphanumeric character with at least a '.' or a '/' ? }
+path-glob = { ? same as path, but with at least a '*', '**' or '{,}' operator ? }
+</code></pre>
+
+<p>A prerequisite or a target may be either a single file path, a globling pattern,
+or an alias. A path always contains one of <code>/</code> or <code>.</code>, for example <code>./foo</code> or
+<code>foo.js</code> instead of just <code>foo</code>; otherwise it is recognized as an alias. Here a
+simple relation example:</p>
+
+<pre><code>source/*.c Compile =&gt; obj/*.o Link -&gt; ./hello_world
+    :: all `Build the hello world program`;
+</code></pre>
+
+<p>It means: <em>"takes all the C files in the <code>source</code> folder, compile them to object
+files in <code>obj</code>; then link all those into a single binary <code>./hello_world</code>. This
+binary can be referred to as the alias <code>all</code>."</em></p>
+
+<h4>
+<a name="expansions" class="anchor" href="#expansions"><span class="octicon octicon-link"></span></a>Expansions</h4>
+
+<p>During evaluation, multi-transformation relations are internally expanded to
+multiple single-transformation relations. As such, this statement:</p>
+
+<pre><code>foo.c Compile -&gt; foo.o Link -&gt; a.out :: all
+</code></pre>
+
+<p>is equivalent to:</p>
+
+<pre><code>foo.c Compile -&gt; foo.o
+foo.o Link -&gt; a.out
+a.out :: all
+</code></pre>
+
+<h4>
+<a name="transformations" class="anchor" href="#transformations"><span class="octicon octicon-link"></span></a>Transformations</h4>
+
+<p>There are two kind of transformations with <em>mekano</em>:</p>
+
+<ul>
+<li><p><strong>plain</strong> transformations noted with a simple arrow <code>-&gt;</code>.
+The recipe is invoked with all the input files, and is assumed to produce
+all the output files.</p></li>
+<li>
+<p><strong>generative</strong> transformations noted with a fat arrow <code>=&gt;</code>. A plain
+transformation is instantiated for each file matched in the prerequisite
+globbing pattern. For example, if we have two files <code>foo.c</code> and <code>bar.c</code>,
+the relation:</p>
+
+<pre><code>*.c Compile =&gt; *.o *.d
+</code></pre>
+
+<p>is interpreted as:</p>
+
+<pre><code>foo.c Compile -&gt; foo.o foo.d
+bar.c Compile -&gt; bar.o bar.d
+</code></pre>
+</li>
+</ul><h4>
+<a name="patterns" class="anchor" href="#patterns"><span class="octicon octicon-link"></span></a>Patterns</h4>
+
+<p>Globbing patterns can appear both as prerequisites and targets, but yield
+different results. Prerequisite patterns expand from two sources:</p>
+
+<ul>
+<li>existing source files matching the pattern;</li>
+<li>other relations' targets matching the pattern.</li>
+</ul><p><a href="https://github.com/isaacs/minimatch">Minimatch</a> is used to match the files.
+A prerequisite pattern never matches the targets of the same transformation;
+for example, <code>dist/*.js Minify =&gt; dist/*.min.js</code> does not create a cycle.</p>
+
+<p>Patterns as targets can only appear right of generative transformations. For
+each prerequisite found, <em>mekano</em> performs a pattern transposition. Currently
+the system is pretty limited and only the symbols <code>**</code> and <code>*</code> are accounted
+for: it copies everything from the left of the first start, and right of the
+last star.</p>
+
+<p>For example, for a relation <code>src/**/*.c Compile =&gt; obj/**/*.o</code>, if a file
+<code>src/a/foo.c</code> was found, the target pattern is expanded to <code>obj/a/foo.o</code>.
+On the other hand, a pattern like <code>src/**/foo/*.c</code> won't work properly
+because <code>/foo/</code> will be lost in the process.</p>
+
+<p>Generative pattern transposition is planned to be hugely improved in the future.</p>
+
+<h3>
+<a name="binds" class="anchor" href="#binds"><span class="octicon octicon-link"></span></a>Binds</h3>
+
+<p>Value bind grammar is as below:</p>
+
+<pre><code>bind = value-name, "=", interpolation, ";"
+value-name = identifier
+</code></pre>
+
+<p>A value cannot be unbound or overridden, but can be rebound in inner scopes.
+Interpolations can refer to existing values with <code>$name</code> or <code>$(name)</code>. Example:</p>
+
+<pre><code>bin = `node_module/.bin`;
+coffee = `$bin/coffee`;
+</code></pre>
+
+<p>A bound value is available anywhere in the mekanofile, even before the
+declaration. The order of declaration does not matter; but you cannot have
+circular references.</p>
+
+<h2>
+<a name="file-update" class="anchor" href="#file-update"><span class="octicon octicon-link"></span></a>File update</h2>
+
+<p>Once the mekanofile has been read, <em>mekano</em> executes the steps below.</p>
+
+<ul>
+<li>Build a graph of all the files according with the relations.</li>
+<li>Topologically sort the files considering their dependencies.</li>
+<li>Determine the <em>imprint</em> of each file involved. The imprint is a
+<a href="http://en.wikipedia.org/wiki/MurmurHash">MurmurHash</a> accounting for a
+file prerequisites and timestamp.</li>
+<li>Determine which transformations are needed to be run by comparing imprints
+to the update log generated by the previous run of <em>mekano</em>, if any.</li>
+<li>Remove <em>orphans</em>: old generated files that are not in the graph anymore.</li>
+<li>Invoke recipes in order to update files. When possible, recipes are
+called asynchronously to make the update faster.</li>
+</ul><p>Any output directory containing targets is automatically created by <em>mekano</em>
+during the update.</p>
+
+<p>The update log is located in <code>.mekano/log.json</code> and contains the imprint of
+each generated file. <strong>Never delete the log file!</strong> To do a whole rebuild, use
+the <strong>clean</strong> command instead. If you delete the log, bad things will
+happen, because <em>mekano</em> will consider all the generated files so far as
+sources. This means, for example, that minified files (<code>foo.min.js</code>) will be
+minified again (<code>foo.min.min.js</code>).</p>
+
+<p>When you are using a version control tool, like <strong>git(1)</strong>: if you are
+adding built files to the repository (and not just the sources), then you
+shall add the log file as well. Otherwise, people checking out the repo.
+will get trouble because <em>mekano</em> won't know which file is generated and which
+is not.</p>
+
+<h2>
+<a name="known-limitations" class="anchor" href="#known-limitations"><span class="octicon octicon-link"></span></a>Known limitations</h2>
+
+<p>It is generally planned to improve upon those limitations.</p>
+
+<ul>
+<li>pattern transposition for generative transformations is very basic;</li>
+<li>no dependency-only prerequisites, no parsing of preprocessors dependency
+files (eg. <a href="http://gcc.gnu.org/onlinedocs/gcc-4.1.1/gcc/Preprocessor-Options.html"><code>gcc -MM</code></a>);</li>
+<li>no recipe-specific or transformation-specific binds;</li>
+<li>a bug appears, for the command `watch' only, when a
+<a href="https://github.com/shama/gaze/issues/107">file is renamed</a>;</li>
+<li>generative transformations accept only one pattern prerequisite.</li>
+</ul><p>See also the <a href="./ROADMAP.md">ROADMAP</a>.</p>
+
+<h2>
+<a name="trivia" class="anchor" href="#trivia"><span class="octicon octicon-link"></span></a>Trivia</h2>
+
+<h3>
+<a name="why-using-this-instead-of-make" class="anchor" href="#why-using-this-instead-of-make"><span class="octicon octicon-link"></span></a>Why using this instead of make?</h3>
+
+<ul>
+<li>It may be simpler to set up transformation of multiple files, with no need
+to write a list of files or use macros like <code>$(wildcard *.foo)</code>;</li>
+<li>directories are handled automatically;</li>
+<li>it detects command line changes;</li>
+<li>it can watch files out-of-the-box;</li>
+<li>it also runs concurrently (GNU Make's <code>-j</code> option).</li>
+</ul><h3>
+<a name="why-using-this-instead-of-grunt" class="anchor" href="#why-using-this-instead-of-grunt"><span class="octicon octicon-link"></span></a>Why using this instead of grunt?</h3>
+
+<ul>
+<li>Minimal updates: files that did not change do not trigger update;</li>
+<li>no plugin system, you can use tools from any package, in any version; 'less
+is more' applies pretty well to this case;</li>
+<li>concurrency.</li>
+</ul><h3>
+<a name="why-not-using-mekano" class="anchor" href="#why-not-using-mekano"><span class="octicon octicon-link"></span></a>Why <em>not</em> using mekano?</h3>
+
+<ul>
+<li>it's still in beta and may be unstable;</li>
+<li>too high-level, you have specific dependency needs;</li>
+<li>no logic, no 'if', limited semantics;</li>
+<li>might be too slow for medium or large projects.</li>
+</ul><h3>
+<a name="why-not-reusing-the-make-syntax" class="anchor" href="#why-not-reusing-the-make-syntax"><span class="octicon octicon-link"></span></a>Why not reusing the make syntax?</h3>
+
+<p>The classic <em>make</em> syntax "targets: prerequisites" is not employed because:</p>
+
+<ul>
+<li>it may not be very clear how to express transformation chains (something
+like <code>foo: bar: glo</code>?);</li>
+<li>inference is done the other way around than <em>make</em> (it infers targets based
+on prerequisites; make does the opposite with rules like <code>%.o: %c</code>).</li>
+</ul><h3>
+<a name="shout-out" class="anchor" href="#shout-out"><span class="octicon octicon-link"></span></a>Shout out</h3>
+
+<p>To the masters from which <em>mekano</em> is inspired:</p>
+
+<ul>
+<li>the historic <a href="http://www.gnu.org/software/make/manual/make.html">GNU make</a>;</li>
+<li>the fast <a href="http://martine.github.io/ninja/">Ninja</a>;</li>
+<li>the cutting-edge <a href="http://gittup.org/tup/">tup</a>;</li>
+<li>the down-to-earth <a href="http://gruntjs.com/">grunt</a>.</li>
+</ul>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/jeanlauliac/mekano/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/jeanlauliac/mekano/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/jeanlauliac/mekano"></a> is maintained by <a href="https://github.com/jeanlauliac">jeanlauliac</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
