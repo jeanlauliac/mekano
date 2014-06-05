@@ -19,6 +19,7 @@ var SHORTHANDS = {
 }
 
 function main() {
+    if (process.getuid && process.getuid() === 0) return noRoot()
     var opts = nopt(KNOWN_OPTS, SHORTHANDS)
     if (opts.version) return version()
     if (opts.argv.remain.length === 0) opts.argv.remain.push('help')
@@ -89,6 +90,12 @@ function getCommandAbbrev() {
         cmds.push(command)
     }
     return abbrev(cmds)
+}
+
+function noRoot() {
+    console.error('error: cowardly refusing to execute as root')
+    console.error('error: bugs in the tool or recipes could cause grave losses')
+    process.exit(9)
 }
 
 function version() {
