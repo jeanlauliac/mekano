@@ -9,13 +9,13 @@ var path = require('path')
 var EventEmitter = require('events').EventEmitter
 
 var KNOWN_OPTS = {
-    'dry-run': Boolean, 'file': String, 'silent': Boolean, 'robot': Boolean
-  , 'force': Boolean, 'version': Boolean, 'shy': Boolean
+    'dry-run': Boolean, 'file': String, 'robot': Boolean
+  , 'version': Boolean, 'shy': Boolean
 }
 
 var SHORTHANDS = {
-    'f': ['--file'], 'n': ['--dry-run'], 's': ['--silent']
-  , 'F': ['--force'], 'v': ['--version'], 'y': ['--shy'], 'r': ['--robot']
+    'f': ['--file'], 'n': ['--dry-run']
+  , 'v': ['--version'], 'y': ['--shy'], 'r': ['--robot']
 }
 
 function main() {

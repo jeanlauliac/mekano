@@ -166,8 +166,6 @@ General options:
   * `-f, --file <mekanofile>` Specify a different mekanofile. If `-` is
     specified, the standard input is used.
   * `-r, --robot` Output machine-parseable text.
-  * `-s, --silent` Be silent: don't write executed commands.
-  * `-F, --force` Force things, like overwriting modified files. Dangerous.
   * `-v, --version` Output version and exit.
 
 Binds and target names can be mixed on the command-line, but targets are always
