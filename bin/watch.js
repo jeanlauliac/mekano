@@ -31,6 +31,7 @@ function watchAndUpdate(data, opts) {
     var ev = new EventEmitter()
     var patterns = getSourcePatterns(data.transs)
     var truce = false
+    var gz
     var update = debounce(function () {
         truce = true
         forwardEvents(ev, refreshGraph(data), function(errored) {
@@ -38,12 +39,16 @@ function watchAndUpdate(data, opts) {
                 truce = false
                 return
             }
-            forwardEvents(ev, updateGraph(data), function () {
+            forwardEvents(ev, updateGraph(data), function (errored, signal) {
+                if (signal !== 'SIGINT') {
+                    gz.close()
+                    return ev.emit('finish', signal)
+                }
                 truce = false
             })
         })
     }, DELAY_MS)
-    gaze(patterns, function (err) {
+    gz = gaze(patterns, function (err) {
         if (err) return helpers.bailoutEv(ev, err)
         if (!opts.robot) console.error('Watching...')
         this.on('all', function (event, filePath) {

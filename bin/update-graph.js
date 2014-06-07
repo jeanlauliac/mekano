@@ -21,6 +21,7 @@ var CMD_FAIL = 'command failed, code %d: %s'
 var CMD_SIGFAIL = 'command failed, signal %s: %s'
 var DRY_REM_ORPHAN = 'Would remove orphan: %s'
 var REM_ORPHAN = 'Removing orphan: %s'
+var SIG_ABORT = 'aborting on %s, recipe process will detach'
 
 var SIGS = ['SIGINT', 'SIGHUP', 'SIGTERM', 'SIGQUIT']
 
@@ -33,14 +34,14 @@ function updateGraph(data, opts) {
         var sigInfo = registerSigs(function onSignal(signal) {
             uev.emit('signal', signal)
         })
-        forwardEvents(ev, uev, function () {
+        forwardEvents(ev, uev, function (errored, signal) {
             unregisterSigs(sigInfo)
             if (opts['dry-run']) return ev.emit('finish')
             mkdirp(path.dirname(common.LOG_PATH), function (err) {
                 if (err) return helpers.bailoutEv(ev, err)
                 var s = data.log.save(fs.createWriteStream(common.LOG_PATH))
                 s.end(function () {
-                    ev.emit('finish')
+                    ev.emit('finish', signal)
                 })
             })
         })
@@ -60,22 +61,23 @@ function update(data, opts) {
     var reFn = opts['dry-run'] ? dryRunEdge : runEdge
     var re = reFn.bind(null, st)
     st.updateMessage(st, null)
-    res = runEdges(data.edges, re, os.cpus().length)
+    var reOpts = {concurrency: os.cpus().length, shy: opts.shy}
+    res = runEdges(data.edges, re, reOpts)
     ev.on('signal', function (signal) {
         if (signal !== 'SIGINT') {
-            res.emit('signal', signal)
-            for (var j in st.stopFns) st.stopFns[j]()
+            res.abort(signal)
+            for (var j in st.stopFns) st.stopFns[j](signal)
             return
         }
         for (var i in st.sigints) st.sigints[i] = true
     })
-    return forwardEvents(ev, res, function (errored) {
+    return forwardEvents(ev, res, function (errored, signal) {
         st.output.endUpdate()
         if (!errored) {
             if (opts['robot']) console.log(' D')
             else console.log('Done.')
         }
-        ev.emit('finish')
+        ev.emit('finish', signal)
     }, function () { st.output.endUpdate() })
 }
 
@@ -111,11 +113,12 @@ function runEdge(st, edge, cb) {
             })
             return cb(null)
         })
-        st.stopFns[edge.index] = function stopRunEdge () {
+        st.stopFns[edge.index] = function stopRunEdge (signal) {
             delete st.stopFns[edge.index]
             stopped = true
             st.updateMessage(st, edge)
-            return cb(new Error('aborting, recipe process will detach'))
+            var msg = util.format(SIG_ABORT, signal)
+            return cb(new Error(msg))
         }
     })
 }

@@ -3,7 +3,7 @@
 setTimeout(function () {
     console.log('beep')
     process.exit(0)
-}, 1000)
+}, 3000)
 
 process.on('SIGINT', function sigint() {
     console.error('SURPRISE SIGINT!')

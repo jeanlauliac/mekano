@@ -13,8 +13,8 @@ function update(opts) {
     forwardEvents(ev, rg, function graphRead(errored, data) {
         if (errored) return ev.emit('finish')
         var ug = updateGraph(data, opts)
-        forwardEvents(ev, ug, function graphUpdated() {
-            ev.emit('finish')
+        forwardEvents(ev, ug, function graphUpdated(errored, signal) {
+            ev.emit('finish', signal)
         })
     })
     return ev
