@@ -4,10 +4,10 @@ module.exports = readGraph
 var fs = require('fs')
 var Log = require('../lib/update/log')
 var EventEmitter = require('events').EventEmitter
-var readInput = require('./read-input')
+var manifest = require('../lib/read/manifest')
 var forwardEvents = require('../lib/forward-events')
 var Scope = require('../lib/scope')
-var helpers = require('./helpers')
+var helpers = require('../lib/helpers')
 var refreshGraph = require('./refresh-graph')
 var errors = require('../lib/errors')
 var expandRefs = require('../lib/read/expand-refs')
@@ -22,7 +22,7 @@ function readGraph(manifestPath, logPath, argv) {
     if (!(argv instanceof Array))
         throw errors.invalidArg('argv', argv)
     var ev = new EventEmitter()
-    var ri = readInput.readInput(manifestPath)
+    var ri = manifest.read(manifestPath)
     forwardEvents(ev, ri, function inputRead(errored, data) {
         if (errored) return ev.emit('finish')
         var cliRes = expandCliTokens(argv)

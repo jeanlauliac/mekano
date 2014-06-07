@@ -13,7 +13,7 @@ var runEdges = require('../lib/update/run-edges')
 var forwardEvents = require('../lib/forward-events')
 var Output = require('./output')
 var common = require('./common')
-var helpers = require('./helpers')
+var helpers = require('../lib/helpers')
 var errors = require('../lib/errors')
 
 var SOME_UTD = 'Those are already up-to-date: %s'

@@ -10,7 +10,7 @@ var expandCmds = require('../lib/update/expand-cmds')
 var imprint = require('../lib/update/imprint')
 var identify = require('../lib/update/identify')
 var forwardEvents = require('../lib/forward-events')
-var helpers = require('./helpers')
+var helpers = require('../lib/helpers')
 var errors = require('../lib/errors')
 var extractCliRefs = require('./extract-cli-refs')
 

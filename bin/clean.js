@@ -9,7 +9,7 @@ var util = require('util')
 var fs = require('fs')
 var extractCliRefs = require('./extract-cli-refs')
 var mkdirp = require('mkdirp')
-var helpers = require('./helpers')
+var helpers = require('../lib/helpers')
 var path = require('path')
 
 var DRY_REM = 'Would remove: %s'

@@ -9,7 +9,7 @@ var forwardEvents = require('../lib/forward-events')
 var readGraph = require('./read-graph')
 var refreshGraph = require('./refresh-graph')
 var common = require('./common')
-var helpers = require('./helpers')
+var helpers = require('../lib/helpers')
 var updateGraph = require('./update-graph')
 
 var DELAY_MS = 500

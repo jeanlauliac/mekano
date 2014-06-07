@@ -2,18 +2,19 @@
 module.exports = aliases
 
 var EventEmitter = require('events').EventEmitter
-var readInput = require('./read-input')
+var manifest = require('../lib/read/manifest')
 var forwardEvents = require('../lib/forward-events')
-var read = require('../lib/read')
+var fromStream = require('../lib/read/from-stream')
 var getAliases = require('../lib/read/get-aliases')
-var helpers = require('./helpers')
+var helpers = require('../lib/helpers')
 
 function aliases(opts) {
     var ev = new EventEmitter()
-    readInput.openSomeInput(opts.file, function (err, input, filePath) {
+    manifest.open(opts.file, function (err, input, filePath) {
         if (err) return helpers.bailoutEv(ev, err)
         var rt = readUnit(input, filePath)
         forwardEvents(ev, rt, function (errored, unit) {
+            if (errored) return ev.emit('finish')
             var aliases
             try { aliases = getAliases(unit.relations) }
             catch (err) {
@@ -30,7 +31,7 @@ function aliases(opts) {
 function readUnit(input, filePath) {
     var ev = new EventEmitter()
     var augmentError = function augmentError(err) { err.filePath = filePath }
-    var rt = read.readUnit(input)
+    var rt = fromStream.readUnit(input)
     forwardEvents(ev, rt, function unitReady(errored, unit) {
         if (errored) return ev.emit('finish')
         ev.emit('finish', unit)

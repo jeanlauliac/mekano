@@ -5,7 +5,7 @@ var EventEmitter = require('events').EventEmitter
 var forwardEvents = require('../lib/forward-events')
 var readGraph = require('./read-graph')
 var common = require('./common')
-var helpers = require('./helpers')
+var helpers = require('../lib/helpers')
 var util = require('util')
 var dotify = require('../lib/graph/dotify')
 
