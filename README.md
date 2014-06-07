@@ -2,9 +2,6 @@
 
 [![Build Status](https://travis-ci.org/jeanlauliac/mekano.svg?branch=master)](https://travis-ci.org/jeanlauliac/mekano)
 
-**This is still an alpha version of the tool, keep in mind the current version
-is not feature-complete. Work is in progress toward that goal.**
-
 Synopsis
 --------
 
