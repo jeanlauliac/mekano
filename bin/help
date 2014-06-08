@@ -1,10 +1,10 @@
 
-Usage: neomake <command> [options]
+Usage: mekano <command> [options]
 
 where <command> is one of:
     update, watch, status, clean, aliases, print, help
 
-neomake help <term>     search for help on <term>
+mekano help <term>     search for help on <term>
 Commands can be abbreviated.
 
 Options:

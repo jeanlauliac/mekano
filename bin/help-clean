@@ -1,0 +1,6 @@
+
+Usage: mekano clean [options] [bind=value...] [target_name...]
+
+Clean the specifed targets, and their own targets. If no target is specified,
+everything is cleaned.
+

@@ -1,0 +1,14 @@
+
+Usage: mekano watch [options] [bind=value...] [target_name...]
+
+Update the specified target(s); then wait, and update anew if prerequisite files
+change. The update behavior is the same as 'mekano update'.
+
+Examples:
+
+    mekano watch
+        Watch and update everything.
+
+    mekano watch assets
+        Watch and update the files referenced by the alias 'assets'.
+

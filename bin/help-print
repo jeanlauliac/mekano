@@ -1,0 +1,8 @@
+
+Usage: mekano print <type> [options]
+
+Print some information about the Mekanofile. Types:
+
+    dot             Output the file graph in the graphviz dot format.
+    manifest        Output the manifest the way it is interpreted.
+

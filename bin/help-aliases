@@ -1,0 +1,6 @@
+
+Usage: mekano aliases [options]
+
+Display all the aliases declared in the Mekanofile along with their
+descriptions.
+

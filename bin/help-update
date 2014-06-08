@@ -1,0 +1,25 @@
+
+Usage: mekano update [options] [bind=value...] [target_name...]
+
+Update one or more targets declared in the Mekanofile. If no target is
+specified, all targets are build. Values can be provided, but there are not
+interpreted as interpolations, only as plain strings.
+
+A target can either be a file path, a globbing pattern, or an alias. To avoid
+shell expansion for patterns, you may want to put quotes around. The easiest is
+to declare aliases in the Mekanofile.
+
+Examples:
+
+    mekano update
+        Update everything.
+
+    mekano update cc=gcc dist/a.out
+        Generate a single file, with a bound variable 'cc'.
+
+    mekano update "assets/**/*.js"
+        Generate all the Javascript assets.
+
+    mekano update assets
+        Generate the files referenced by the alias 'assets'.
+

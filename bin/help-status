@@ -1,0 +1,6 @@
+
+Usage: mekano status [options] [bind=value...] [target_name...]
+
+Give the status for the specified target(s), that is, is there any file to be
+updated.
+

@@ -72,9 +72,15 @@ Commands.aliases = require('./aliases')
 Commands.clean = require('./clean')
 Commands.print = require('./print')
 
-Commands.help = function () {
+Commands.help = function (opts) {
     var ev = new EventEmitter()
-    var f = fs.createReadStream(path.join(__dirname, 'help'), 'utf8')
+    var file = 'help'
+    if (opts.argv.remain.length > 0) {
+        var command = COMMANDS[opts.argv.remain.shift()]
+        if (command && command != 'help')
+            file += '-' + command
+    }
+    var f = fs.createReadStream(path.join(__dirname, file), 'utf8')
     f.pipe(process.stderr)
     f.on('end', function () { ev.emit('finish') })
     return ev
