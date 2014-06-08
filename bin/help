@@ -1,8 +1,17 @@
 
-Usage: neomake <command>
+Usage: neomake <command> [options]
 
 where <command> is one of:
-    update, status, clean, aliases, trace, help
+    update, watch, status, clean, aliases, print, help
 
 neomake help <term>     search for help on <term>
+Commands can be abbreviated.
+
+Options:
+
+    -y, --shy                   Stops an update as soon as an error occurs.
+    -n, --dry-run               No command is actually run.
+    -f, --file <mekanofile>     Specify a different manifest. '-' for stdin.
+    -r, --robot                 Parseable output.
+    -v, --version               Output version and quit.
 
