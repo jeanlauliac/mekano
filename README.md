@@ -12,8 +12,8 @@ Synopsis
   * is a **make-like update tool**: you have a bunch of files in some
     directories, you want to **generate other files** from them, **fast** (no
     unnecessary work);
-  * liberally aims to **lessen the frustration** that can occur working with GNU
-    *make(1)* on small or medium projects;
+  * liberally aims to **lessen the frustration** that might occur working with
+    GNU *make(1)* on small projects;
   * tries to be balanced between **speed and convenience**;
   * works **best** with a **powerful shell** (like bash & co.), that it does not
     supplant;
@@ -88,8 +88,7 @@ automatically creates output directories; runs commands concurrently; and
 attempts to provide simple semantics for dependency definitions. This tool is
 largely inspired by the
 [UNIX *make(1)*](http://pubs.opengroup.org/onlinepubs/009695399/utilities/make.html)
-utility, of which it modestly tries to be a 21th-century alternative (not a
-replacement).
+utility.
 
 *mekano* only knows how to update files. It is not well suited for so-called
 'tasks' (eg. 'test', 'publish'). Plain scripts are probably a better idea for
@@ -404,10 +403,11 @@ Trivia
 
 ### Why *not* using mekano?
 
-  * it's still in beta and may be unstable;
+  * it's still in beta / unstable;
   * too high-level, you have specific dependency needs;
   * no logic, no 'if', limited semantics;
-  * might be too slow for medium or large projects.
+  * no 'tasks';
+  * may be too slow for medium or large projects.
 
 ### Why not reusing the make syntax?
 
