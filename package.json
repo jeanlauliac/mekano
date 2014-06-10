@@ -1,6 +1,6 @@
 {
   "name": "mekano",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "maintain, update and regenerate groups of files",
   "main": "index.js",
   "files": [

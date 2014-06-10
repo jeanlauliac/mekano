@@ -372,44 +372,22 @@ Known limitations
 
 It is generally planned to improve upon those limitations.
 
+  * no logic, no 'if', limited semantics;
   * pattern transposition for generative transformations is very basic;
   * no dependency-only prerequisites, no parsing of preprocessors dependency
     files (eg. [`gcc -MM`](http://gcc.gnu.org/onlinedocs/gcc-4.1.1/gcc/Preprocessor-Options.html));
   * no recipe-specific or transformation-specific binds;
   * a bug appears, for the command `watch' only, when a
     [file is renamed](https://github.com/shama/gaze/issues/107);
-  * generative transformations accept only one pattern prerequisite.
+  * generative transformations accept only one pattern prerequisite;
+  * may be too slow for medium or large projects.
 
 See also the [ROADMAP](./ROADMAP.md).
 
 Trivia
 ------
 
-### Why using this instead of make?
-
-  * It may be simpler to set up transformation of multiple files, with no need
-    to write a list of files or use macros like `$(wildcard *.foo)`;
-  * directories are handled automatically;
-  * it detects command line changes;
-  * it can watch files out-of-the-box;
-  * it also runs concurrently (GNU Make's `-j` option).
-
-### Why using this instead of grunt?
-
-  * Minimal updates: files that did not change do not trigger update;
-  * no plugin system, you can use tools from any package, in any version; 'less
-    is more' applies pretty well to this case;
-  * concurrency.
-
-### Why *not* using mekano?
-
-  * it's still in beta / unstable;
-  * too high-level, you have specific dependency needs;
-  * no logic, no 'if', limited semantics;
-  * no 'tasks';
-  * may be too slow for medium or large projects.
-
-### Why not reusing the make syntax?
+#### Why not reusing the make syntax?
 
 The classic *make* syntax "targets: prerequisites" is not employed because:
 
@@ -418,7 +396,7 @@ The classic *make* syntax "targets: prerequisites" is not employed because:
   * inference is done the other way around than *make* (it infers targets based
     on prerequisites; make does the opposite with rules like `%.o: %c`).
 
-### Shout out
+#### Shout out
 
 To the masters from which *mekano* is inspired:
 
