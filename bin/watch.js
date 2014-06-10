@@ -40,7 +40,7 @@ function watchAndUpdate(data, opts) {
                 return
             }
             forwardEvents(ev, updateGraph(data), function (errored, signal) {
-                if (signal !== 'SIGINT') {
+                if (signal && signal !== 'SIGINT') {
                     gz.close()
                     return ev.emit('finish', signal)
                 }
