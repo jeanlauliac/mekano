@@ -26,19 +26,19 @@ Example
 
 In `./Mekanofile`:
 
-    bin = `node_modules/.bin`;
+    bin = `node_modules/.bin` ;
 
-    Concat: `cat $in > $out`;
-    Coffee: `$bin/coffee -cp $in > $out`;
-    Minify: `$bin/uglifyjs < $in > $out`;
+    Concat: `cat $in > $out` ;
+    Coffee: `$bin/coffee -cp $in > $out` ;
+    Minify: `$bin/uglifyjs < $in > $out` ;
 
     src/**/*.coffee
         Coffee => build/**/*.js
-        Concat -> dist/concat.js;
+        Concat -> dist/concat.js ;
 
     dist/*.js
         Minify => dist/*.min.js
-        :: all `Update all files`;
+        :: all `Update all files` ;
 
 In your preferred shell:
 
@@ -197,7 +197,7 @@ A mekanofile can contain recipes, relations, and binds. Comments start with
 other cases. Statements shall be terminated with `;`, otherwise *mekano* will
 not know the boundary between two successive relations.
 
-    unit = { recipe | relation | bind }
+    unit = { recipe | relation | bind } ;
 
 The golden rule when writing a mekanofile is that **order does not matter**.
 Whatever the ordering of recipes, relations and binds is, the interpretation
@@ -212,7 +212,7 @@ is as below:
     recipe = recipe-name, ":", command, ";" ;
     recipe-name = identifier ;
     command = interpolation ;
-    identifier = { ? A-Z, a-z, 0-9, '-' or '_' ? }
+    identifier = { ? A-Z, a-z, 0-9, '-' or '_' ? } ;
     interpolation = "`", ? any character ?, "`" ;
 
 There can only be a single command in a recipe. However, multiple processes can
@@ -221,7 +221,7 @@ be launched using the shell operators like `;`, `&&`, `&`, `|` or `||`. The
 are especially useful to avoid creating temporary files (if your shell supports
 it). The command can span several lines. Here a simple recipe example:
 
-    Compile: `gcc -c $in -o $out`;
+    Compile: `gcc -c $in -o $out` ;
 
 Backticks define an *interpolation*. An interpolation can contain the backtick
 character when escaped as `` $` ``. `$$` yields a single dollar sign. Command
@@ -239,14 +239,14 @@ in the mekanofile, either after or before the relations referring to it.
 
 Relation grammar is as below:
 
-    relation = ref-list, { transformation }, [ alias ], ";"
-    transformation = recipe-name, ( "=>" | "->" ), ref-list
-    alias = "::", alias-name, [ alias-description ]
-    ref-list = { path | path-glob | alias-name }
-    alias-name = identifier
-    alias-description = interpolation
-    path = { ? alphanumeric character with at least a '.' or a '/' ? }
-    path-glob = { ? same as path, but with at least a '*', '**' or '{,}' operator ? }
+    relation = ref-list, { transformation }, [ alias ], ";" ;
+    transformation = recipe-name, ( "=>" | "->" ), ref-list ;
+    alias = "::", alias-name, [ alias-description ] ;
+    ref-list = { path | path-glob | alias-name } ;
+    alias-name = identifier ;
+    alias-description = interpolation ;
+    path = { ? alphanumeric character with at least a '.' or a '/' ? } ;
+    path-glob = { ? same as path, but with at least a '*', '**' or '{,}' operator ? } ;
 
 A prerequisite or a target may be either a single file path, a globling pattern,
 or an alias. A path always contains one of `/` or `.`, for example `./foo` or
@@ -254,7 +254,7 @@ or an alias. A path always contains one of `/` or `.`, for example `./foo` or
 simple relation example:
 
     source/*.c Compile => obj/*.o Link -> ./hello_world
-        :: all `Build the hello world program`;
+        :: all `Build the hello world program` ;
 
 It means: *"takes all the C files in the `source` folder, compile them to object
 files in `obj`; then link all those into a single binary `./hello_world`. This
@@ -265,13 +265,13 @@ binary can be referred to as the alias `all`."*
 During evaluation, multi-transformation relations are internally expanded to
 multiple single-transformation relations. As such, this statement:
 
-    foo.c Compile -> foo.o Link -> a.out :: all
+    foo.c Compile -> foo.o Link -> a.out :: all ;
 
 is equivalent to:
 
-    foo.c Compile -> foo.o
-    foo.o Link -> a.out
-    a.out :: all
+    foo.c Compile -> foo.o ;
+    foo.o Link -> a.out ;
+    a.out :: all ;
 
 #### Transformations
 
@@ -286,12 +286,12 @@ There are two kind of transformations with *mekano*:
     globbing pattern. For example, if we have two files `foo.c` and `bar.c`,
     the relation:
 
-        *.c Compile => *.o *.d
+        *.c Compile => *.o *.d ;
 
     is interpreted as:
 
-        foo.c Compile -> foo.o foo.d
-        bar.c Compile -> bar.o bar.d
+        foo.c Compile -> foo.o foo.d ;
+        bar.c Compile -> bar.o bar.d ;
 
 #### Patterns
 
@@ -322,14 +322,14 @@ Generative pattern transposition is planned to be hugely improved in the future.
 
 Value bind grammar is as below:
 
-    bind = value-name, "=", interpolation, ";"
-    value-name = identifier
+    bind = value-name, "=", interpolation, ";" ;
+    value-name = identifier ;
 
 A value cannot be unbound or overridden, but can be rebound in inner scopes.
 Interpolations can refer to existing values with `$name` or `$(name)`. Example:
 
-    bin = `node_module/.bin`;
-    coffee = `$bin/coffee`;
+    bin = `node_module/.bin` ;
+    coffee = `$bin/coffee` ;
 
 A bound value is available anywhere in the mekanofile, even before the
 declaration. The order of declaration does not matter; but you cannot have
