@@ -66,7 +66,9 @@ test('graph.map() globs', function (t) {
 
 var TEST_TRANSS_MULTI = [
     new interRep.PlainTrans({multi:true}, [
-        new ast.Ref(ast.Ref.PATH_GLOB, '*.c')
+        new ast.Ref(ast.Ref.PATH, 'n1')
+      , new ast.Ref(ast.Ref.PATH_GLOB, '*.c')
+      , new ast.Ref(ast.Ref.PATH, 'n2')
     ], [new ast.Ref(ast.Ref.PATH_GLOB, '*.o')])
   , new interRep.PlainTrans({multi: true}, [
         new ast.Ref(ast.Ref.PATH_GLOB, '*.o')
@@ -77,13 +79,15 @@ test('graph.map() multi', function (t) {
     var ev = map(testGlob, TEST_LOG, TEST_TRANSS_MULTI)
     ev.on('finish', function (graph) {
         var fooObj = graph.getFileByPath('foo.o')
-        t.equal(fooObj.inEdge.inFiles.length, 1)
-        t.equal(fooObj.inEdge.inFiles[0].path, 'foo.c')
+        t.equal(fooObj.inEdge.inFiles.length, 3)
+        t.equal(fooObj.inEdge.inFiles[0].path, 'n1')
+        t.equal(fooObj.inEdge.inFiles[1].path, 'foo.c')
+        t.equal(fooObj.inEdge.inFiles[2].path, 'n2')
         t.equal(fooObj.outEdges[0].outFiles.length, 1)
         t.equal(fooObj.outEdges[0].outFiles[0].path, 'foo.a')
         var barObj = graph.getFileByPath('bar.o')
-        t.equal(barObj.inEdge.inFiles.length, 1)
-        t.equal(barObj.inEdge.inFiles[0].path, 'bar.c')
+        t.equal(barObj.inEdge.inFiles.length, 3)
+        t.equal(barObj.inEdge.inFiles[1].path, 'bar.c')
         t.equal(barObj.outEdges[0].outFiles.length, 1)
         t.equal(barObj.outEdges[0].outFiles[0].path, 'bar.a')
         t.end()
