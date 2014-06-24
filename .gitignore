@@ -5,3 +5,4 @@ npm-debug.log
 build/
 dist/
 .mekano/
+.sass-cache/

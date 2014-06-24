@@ -12,7 +12,11 @@
     "mekano": "bin/cli.js"
   },
   "scripts": {
-    "test": "faucet test/read test/graph test/update test"
+    "test": "faucet test/read test/graph test/update test",
+    "install": "bundle install",
+    "build": "bin/cli.js update",
+    "develop": "bin/cli.js watch & serve -L dist",
+    "serve": "serve -L dist"
   },
   "repository": {
     "type": "git",
@@ -49,8 +53,11 @@
   },
   "homepage": "https://github.com/jeanlauliac/mekano",
   "devDependencies": {
-    "tape": "^2.12.3",
-    "faucet": "0.0.1"
+    "browserify": "^4.1.10",
+    "ejs": "^1.0.0",
+    "faucet": "0.0.1",
+    "serve": "^1.4.0",
+    "tape": "^2.12.3"
   },
   "dependencies": {
     "abbrev": "^1.0.5",
