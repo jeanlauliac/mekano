@@ -8,5 +8,6 @@ ReduceEjs: `bin/util/reduce-ejs.js $in > $out` ;
 
 doc/website/**/*.js Browserify -> dist/bundle.js ;
 doc/website/**/*.sass Sass -> dist/bundle.css ;
-doc/website/*.ejs.in doc/website/index.ejs ReduceEjs => dist/*.html ;
+doc/website/*.ejs ReduceEjs => dist/*.html ;
 doc/website/*.woff Copy => dist/*.woff ;
+doc/logo.svg Copy -> dist/logo.svg ;

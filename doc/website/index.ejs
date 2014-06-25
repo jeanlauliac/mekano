@@ -1,15 +1,33 @@
-<!doctype html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <title>Balanced</title>
-        <link rel="stylesheet" type="text/css" href="bundle.css">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link href='http://fonts.googleapis.com/css?family=Open+Sans'
-              rel='stylesheet' type='text/css'>
-        <script type="text/javascript" src="bundle.js" defer></script>
-    </head>
-    <body>
-        <%- inner -%>
-    </body>
-</html>
+<% template('templates/index.ejs.tpl') %>
+<header>
+    <h1><a href='/'><img src='/logo.svg' alt='Mekano' /></h1>
+    <p>A peaceful build tool</p>
+</header>
+<p class='box'>
+    <a href='/get-started.html'>Get started</a> and discover
+    <a href='/popular-tools.html'>how to use the
+    most popular compilers, minifiers…</a> with mekano. One-line install with
+    <a href='https://www.npmjs.org/'>npm</a>:
+    <pre>npm install -g mekano</pre>
+</p>
+<h2>What's Mekano?</h2>
+<p>Mekano can be called many names, but it is generally recognized as a
+<em>build tool</em>, or simply as an update tool. It automates the repetitive
+transformations on files, like compilation, minification, etc. Once configured,
+it can do most of the chores. On the other hand, it is not a "task runner":
+Mekano focuses on files. See <a href='https://www.npmjs.org/doc/misc/npm-scripts.html'>
+npm-scripts</a> as an complement.</p>
+
+<h2>Why Mekano?</h2> Mekano believes in the power of the shell and exposes a
+sharp, focused syntax. As such, it needs not any "plugin" at all, and you get a
+precise control of what happens. It works out-of-the-box with any tool, whether
+it be in Javascript, Ruby… Mekano tracks your files and will do only what is
+needed to keep the project up-to-date, no more.
+In that regard, Mekano takes a different stance than tools like
+<a href='http://gruntjs.com/'>Grunt</a> or
+<a href='http://gulpjs.com/'>Gulp</a>.
+</p>
+
+<h2>How does it looks like?</h2>
+<p>Here's a sample run of Mekano:</p>
+
