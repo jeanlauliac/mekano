@@ -3,6 +3,13 @@ Roadmap
 
 Fancy features to add:
 
+  * When a target appears both in a multi and in a single transformation:
+
+        *.c Compile => *.o ;
+        foo.c foo.h Compile -> foo.o ;
+
+    Then the single transformation replaces the other. This allows specifics.
+
   * A `foreach` keyword expanding for each prerequisite, for example:
 
         foreach(foo.c bar.c) lib.h Compile -> foo.o bar.o foo.d bar.d
