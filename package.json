@@ -56,6 +56,7 @@
     "browserify": "^4.1.10",
     "ejs": "^1.0.0",
     "faucet": "0.0.1",
+    "normalize.css": "^3.0.1",
     "serve": "^1.4.0",
     "tape": "^2.12.3"
   },
