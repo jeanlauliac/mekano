@@ -1,7 +1,42 @@
-Roadmap
-=======
+# Roadmap
 
-Fancy features to add:
+## High priority
+
+  * Implicit dependencies, accounted for as dependencies but not included in the
+    $in value:
+
+        foo.c | lib.h Compile -> foo.o
+
+  * Automatic collection of implicit dependencies from inline sourcemaps. Files referenced in the
+    sourcemap are automatically added as implicit dependencies, so that
+    the file is re-updated when they change. For example, that means browserify
+    will work beautifully out-of-the-box without the need to specify
+    dependencies manually.
+
+  * Using interpolation in path lists (targets or prerequisites):
+    `` `$dist/a.out` ``.
+
+  * Escaping in path lists: `"foo with spaces.c"`.
+
+## Medium priority
+
+  * Automatic collection of implicit dependencies from external sourcemaps.
+
+  * Local bind scopes:
+
+        Coffee: `$cf < $in > $out` { cf = `$coffee -cp` };
+
+  * Recipe parameters:
+
+        Coffee(debug): `$coffee -cp < $in > $out`
+            { arg = if debug then `-d` else `` } ;
+
+        *.coffee Coffee(no) -> *.js
+
+## Low priority
+
+  * Automatic collection of implicit dependencies from compiler-generated
+    dependency files (eg. `gcc -MM`).
 
   * When a target appears both in a multi and in a single transformation:
 
@@ -37,24 +72,10 @@ Fancy features to add:
     In this case, no `*.gen.coffee` is not matched by the first rule, even if it
     exists on disk.
 
-  * Local bind scopes:
-
-        Coffee: `$cf < $in > $out` { cf = `$coffee -cp` };
-
-  * Implicit dependencies, accounted for as dependencies but not included in the
-    $in value:
-
-        foo.c | lib.h Compile -> foo.o
-
-  * Automatic collection of implicit dependencies from compiler-generated
-    dependency files (eg. `gcc -MM`).
-
-  * Using interpolation in path lists (targets or prerequisites).
-
   * Implicit files:
 
         src/**/*.coffee
-            Coffee => Concat -> dist/concat.js;
+            Coffee => auto Concat -> dist/concat.js;
 
     The compiled JS files, in this case, are auto-named and placed in .mekano/.
 
@@ -62,3 +83,7 @@ Fancy features to add:
 
         src/**/*.coffee :: sources
             Coffee => build/**/*.js
+
+  * Includes:
+
+        include util.mkno
