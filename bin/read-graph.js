@@ -11,7 +11,7 @@ var helpers = require('../lib/helpers')
 var refreshGraph = require('./refresh-graph')
 var errors = require('../lib/errors')
 var expandRefs = require('../lib/read/expand-refs')
-var expandCliTokens = require('./expand-cli-tokens')
+var expandCliTokens = require('../lib//expand-cli-tokens')
 var aliasFromArray = require('../lib/read/alias-from-array')
 
 function readGraph(manifestPath, logPath, argv) {

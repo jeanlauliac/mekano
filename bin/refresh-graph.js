@@ -12,7 +12,7 @@ var identify = require('../lib/update/identify')
 var forwardEvents = require('../lib/forward-events')
 var helpers = require('../lib/helpers')
 var errors = require('../lib/errors')
-var extractCliRefs = require('./extract-cli-refs')
+var extractCliRefs = require('../lib/extract-cli-refs')
 
 function refreshGraph(data) {
     if (!data) throw errors.invalidArg('data', data)
