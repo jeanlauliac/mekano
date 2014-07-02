@@ -6,10 +6,9 @@ var mkdirp = require('mkdirp')
 var util = require('util')
 var os = require('os')
 var path = require('path')
-var mkdirp = require('mkdirp')
-var exec = require('child_process').exec
 var EventEmitter = require('events').EventEmitter
 var runEdges = require('../lib/update/run-edges')
+var EdgeRunner = require('../lib/update/edge-runner')
 var forwardEvents = require('../lib/forward-events')
 var Output = require('./output')
 var common = require('./common')
@@ -17,11 +16,8 @@ var helpers = require('../lib/helpers')
 var errors = require('../lib/errors')
 
 var SOME_UTD = 'Those are already up-to-date: %s'
-var CMD_FAIL = 'command failed, code %d: %s'
-var CMD_SIGFAIL = 'command failed, signal %s: %s'
 var DRY_REM_ORPHAN = 'Would remove orphan: %s'
 var REM_ORPHAN = 'Removing orphan: %s'
-var SIG_ABORT = 'aborting on %s, recipe process will detach'
 
 var SIGS = ['SIGINT', 'SIGHUP', 'SIGTERM', 'SIGQUIT']
 
@@ -58,69 +54,40 @@ function update(data, opts) {
             , sigints: {}, stopFns: {}
             , dirs: {}, output: new Output(opts['dry-run'])}
     st.updateMessage = opts['robot'] ? updateRobotMessage : updateMessage
-    var reFn = opts['dry-run'] ? dryRunEdge : runEdge
-    var re = reFn.bind(null, st)
-    st.updateMessage(st, null)
-    var reOpts = {concurrency: os.cpus().length, shy: opts.shy}
-    res = runEdges(data.edges, re, reOpts)
-    ev.on('signal', function (signal) {
-        if (signal !== 'SIGINT') {
-            res.abort(signal)
-            for (var j in st.stopFns) st.stopFns[j](signal)
-            return
-        }
-        for (var i in st.sigints) st.sigints[i] = true
-    })
-    return forwardEvents(ev, res, function (errored, signal) {
-        st.output.endUpdate()
-        if (!errored) {
-            if (opts['robot']) console.log(' D')
-            else console.log('Done.')
-        }
-        ev.emit('finish', signal)
-    }, function () { st.output.endUpdate() })
-}
-
-function runEdge(st, edge, cb) {
-    st.sigints[edge.index] = false
-    var cmd = st.data.cmds[edge.index]
-    mkEdgeDirs(st, edge, function (err) {
-        if (err) return cb(err)
-        var stopped = false
-        exec(cmd, function (err, stdout, stderr) {
-            if (stopped) return
-            delete st.stopFns[edge.index]
-            var sigint = st.sigints[edge.index]
-            delete st.sigints[edge.index]
-            if (!err) st.runCount++
+    var reFn, er
+    if (opts['dry-run']) reFn = dryRunEdge.bind(null, st)
+    else {
+        er = new EdgeRunner(data.cmds)
+        er.on('run', function (edge, stdout, stderr) {
             st.updateMessage(st, edge)
             if (stdout.length > 0 || stderr.length > 0) {
                 st.output.endUpdate()
                 process.stdout.write(stdout)
                 process.stderr.write(stderr)
             }
-            if (err) {
-                var message
-                if (err.code) message = util.format(CMD_FAIL, err.code, cmd)
-                else message = util.format(CMD_SIGFAIL, err.signal, cmd)
-                var nerr = new Error(message)
-                if ((err.signal === 'SIGINT' || err.code === 130) && sigint)
-                    nerr.signal = 'SIGINT'
-                return cb(nerr)
-            }
-            edge.outFiles.forEach(function (file) {
-                st.data.log.update(file.path, st.data.imps[file.path])
-            })
-            return cb(null)
         })
-        st.stopFns[edge.index] = function stopRunEdge (signal) {
-            delete st.stopFns[edge.index]
-            stopped = true
-            st.updateMessage(st, edge)
-            var msg = util.format(SIG_ABORT, signal)
-            return cb(new Error(msg))
-        }
+        reFn = er.run.bind(er)
+    }
+    var reOpts = {concurrency: os.cpus().length, shy: opts.shy}
+    res = runEdges(data.edges, reFn, reOpts)
+    res.on('complete', function (edge) {
+        st.runCount++
+        edge.outFiles.forEach(function (file) {
+            data.log.update(file.path, st.data.imps[file.path])
+        })
     })
+    ev.on('signal', function (signal) {
+        if (signal !== 'SIGINT') res.abort(signal)
+        if (er) er.abort(signal)
+    })
+    st.updateMessage(st, null)
+    return forwardEvents(ev, res, function (errored, signal) {
+        if (!errored) {
+            st.updateMessage(st, null)
+        }
+        st.output.endUpdate()
+        ev.emit('finish', signal)
+    }, function () { st.output.endUpdate() })
 }
 
 function dryRunEdge(st, edge, cb) {
@@ -188,20 +155,6 @@ function unregisterSigs(info) {
     })
 }
 
-function mkEdgeDirs(st, edge, cb) {
-    ;(function next(i) {
-        if (i >= edge.outFiles.length) return cb(null)
-        var file = edge.outFiles[i]
-        var dir = path.dirname(file.path)
-        if (st.dirs.hasOwnProperty(dir)) return next(i + 1)
-        mkdirp(path.dirname(file.path), function (err) {
-            if (err) return cb(err)
-            st.dirs[dir] = true
-            return next(i + 1)
-        })
-    })(0)
-}
-
 function updateRobotMessage(st, edge) {
     if (!edge) return
     var name = edge.trans.ast.recipeName
@@ -215,16 +168,20 @@ function updateRobotMessage(st, edge) {
 
 function updateMessage(st, edge) {
     var perc = (st.runCount / st.data.edges.length)
-    var label = ''
+    var label
     if (edge) {
         var name = edge.trans.ast.recipeName
         var inFiles = edge.inFiles.map(pathOf).join(' ')
         var outFiles = edge.outFiles.map(pathOf).join(' ')
         label = util.format('%s %s -> %s', name, inFiles, outFiles)
+    } else if (st.runCount === st.data.edges.length) {
+        label = 'Done.'
+    } else {
+        label = 'Updating...'
     }
-    var action = st.opts['dry-run'] ? 'Would update' : 'Updating'
+    //var action = st.opts['dry-run'] ? 'Would update' : 'Updating'
     var percStr = helpers.pad((perc * 100).toFixed(1), 5)
-    var message = util.format('%s... %s%  %s', action, percStr, label)
+    var message = util.format('[%s%] %s', percStr, label)
     st.output.update(message)
 }
 
