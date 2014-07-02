@@ -18,11 +18,9 @@ var REM = 'Removing: %s'
 function clean(opts) {
     var ev = new EventEmitter()
     var rg = readGraph(opts.file, common.LOG_PATH, opts.argv.remain)
-    forwardEvents(ev, rg, function graphRead(errored, data) {
-        if (errored) return ev.emit('finish')
+    forwardEvents.noErr(ev, rg, function graphRead(data) {
         var ecr = extractCliRefs(data.graph, data.cliRefs)
-        forwardEvents(ev, ecr, function refExtracted(errored, files) {
-            if (errored) return ev.emit('finish')
+        forwardEvents.noErr(ev, ecr, function refExtracted(files) {
             files = cleanSort(files, function (file) {
                 return data.log.isGenerated(file.path)
             })

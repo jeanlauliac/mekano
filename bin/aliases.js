@@ -13,8 +13,7 @@ function aliases(opts) {
     manifest.open(opts.file, function (err, input, filePath) {
         if (err) return helpers.bailoutEv(ev, err)
         var rt = readUnit(input, filePath)
-        forwardEvents(ev, rt, function (errored, unit) {
-            if (errored) return ev.emit('finish')
+        forwardEvents.noErr(ev, rt, function (unit) {
             var aliases
             try { aliases = getAliases(unit.relations) }
             catch (err) {
@@ -32,8 +31,7 @@ function readUnit(input, filePath) {
     var ev = new EventEmitter()
     var augmentError = function augmentError(err) { err.filePath = filePath }
     var rt = fromStream.readUnit(input)
-    forwardEvents(ev, rt, function unitReady(errored, unit) {
-        if (errored) return ev.emit('finish')
+    forwardEvents.noErr(ev, rt, function unitReady(unit) {
         ev.emit('finish', unit)
     }, augmentError)
     return ev

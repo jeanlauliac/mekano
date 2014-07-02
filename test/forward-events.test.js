@@ -35,3 +35,15 @@ test('forwardEvents() w/ error', function (t) {
     from.emit('error', 'fizz')
     from.emit('finish', 'foobar')
 })
+
+test('forwardEvents.noErr()', function (t) {
+    var to = new EventEmitter()
+    var from = new EventEmitter()
+    forwardEvents.noErr(to, from, function () {
+        t.fail('shouldn\t call this')
+    })
+    to.on('error', function(err) { t.equal(err, 'cake') })
+    to.on('finish', function () { t.end() })
+    from.emit('error', 'cake')
+    from.emit('finish')
+})

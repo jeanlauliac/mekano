@@ -10,8 +10,7 @@ var updateGraph = require('./update-graph')
 function update(opts) {
     var ev = new EventEmitter()
     var rg = readGraph(opts.file, common.LOG_PATH, opts.argv.remain)
-    forwardEvents(ev, rg, function graphRead(errored, data) {
-        if (errored) return ev.emit('finish')
+    forwardEvents.noErr(ev, rg, function graphRead(data) {
         var ug = updateGraph(data, opts)
         forwardEvents(ev, ug, function graphUpdated(errored, signal) {
             ev.emit('finish', signal)

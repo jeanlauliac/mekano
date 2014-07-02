@@ -23,8 +23,7 @@ function readGraph(manifestPath, logPath, argv) {
         throw errors.invalidArg('argv', argv)
     var ev = new EventEmitter()
     var ri = manifest.read(manifestPath)
-    forwardEvents(ev, ri, function inputRead(errored, data) {
-        if (errored) return ev.emit('finish')
+    forwardEvents.noErr(ev, ri, function inputRead(data) {
         var cliRes = expandCliTokens(argv)
         data.cliScope = cliRes[0]
         var eax = aliasFromArray.bind(null, data.aliases)
@@ -34,8 +33,7 @@ function readGraph(manifestPath, logPath, argv) {
             throw err
         }
         var gg = getGraph(logPath, data)
-        forwardEvents(ev, gg, function graphGot(errored, data) {
-            if (errored) return ev.emit('finish')
+        forwardEvents.noErr(ev, gg, function graphGot(data) {
             ev.emit('finish', data)
         }, function augmentError(err) { err.filePath = data.filePath })
     })

@@ -18,8 +18,7 @@ function refreshGraph(data) {
     if (!data) throw errors.invalidArg('data', data)
     var ev = new EventEmitter()
     var from = map(glob, data.log, data.transs)
-    forwardEvents(ev, from, function graphMapped(errored, graph) {
-        if (errored) return ev.emit('finish')
+    forwardEvents.noErr(ev, from, function graphMapped(graph) {
         data.graph = graph
         var rd = refreshData(data)
         forwardEvents(ev, rd, function () {
@@ -32,8 +31,7 @@ function refreshGraph(data) {
 function refreshData(data) {
     var ev = new EventEmitter()
     var et = extractCliRefs(data.graph, data.cliRefs)
-    forwardEvents(ev, et, function cliRefGot(errored, files) {
-        if (errored) return ev.emit('finish')
+    forwardEvents.noErr(ev, et, function cliRefGot(files) {
         try {
             data.files = sort(files)
             data.cmds = expandCmds(data.scope, data.recipes, data.graph.edges)

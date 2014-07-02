@@ -18,8 +18,7 @@ var TPL_RECIPE = '%s: `%s`;'
 function print(opts) {
     var ev = new EventEmitter()
     var rg = readGraph(opts.file, common.LOG_PATH, [])
-    forwardEvents(ev, rg, function graphRead(errored, data) {
-        if (errored) return ev.emit('finish')
+    forwardEvents.noErr(ev, rg, function graphRead(data) {
         if (opts.argv.remain.length !== 1)
             return helpers.bailoutEv(ev, new Error(ONE_ARG))
         var type = opts.argv.remain[0]
