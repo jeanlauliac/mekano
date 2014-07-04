@@ -58,15 +58,17 @@ function update(data, opts) {
     if (opts['dry-run']) reFn = dryRunEdge.bind(null, st)
     else {
         er = new EdgeRunner(data.cmds)
-        er.on('run', function (edge, stdout, stderr) {
-            st.updateMessage(st, edge)
-            if (stdout.length > 0 || stderr.length > 0) {
-                st.output.endUpdate()
-                process.stdout.write(stdout)
-                process.stderr.write(stderr)
-            }
-        })
-        reFn = er.run.bind(er)
+        reFn = function (edge, cb) {
+            er.run(edge, function (err, stdout, stderr) {
+                st.updateMessage(st, edge)
+                if (stdout.length > 0 || stderr.length > 0) {
+                    st.output.endUpdate()
+                    process.stdout.write(stdout)
+                    process.stderr.write(stderr)
+                }
+                return cb(err)
+            })
+        }
     }
     var reOpts = {concurrency: os.cpus().length, shy: opts.shy}
     res = runEdges(data.edges, reFn, reOpts)
