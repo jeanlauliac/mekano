@@ -55,29 +55,12 @@ function update(data, opts) {
             , dirs: {}, output: new Output(opts['dry-run'])}
     st.updateMessage = opts['robot'] ? updateRobotMessage : updateMessage
     var reFn, er
-    if (opts['dry-run']) reFn = dryRunEdge.bind(null, st)
-    else {
-        er = new EdgeRunner(data.cmds)
-        reFn = function (edge, cb) {
-            er.run(edge, function (err, stdout, stderr) {
-                st.updateMessage(st, edge)
-                if (stdout.length > 0 || stderr.length > 0) {
-                    st.output.endUpdate()
-                    process.stdout.write(stdout)
-                    process.stderr.write(stderr)
-                }
-                return cb(err)
-            })
-        }
-    }
+    var erOpts = !opts['dry-run'] ? null : {exec: dryExec.bind(null),
+            mkdirP: dryMkdirP.bind(null)}
+    er = new EdgeRunner(data.cmds, erOpts)
+    reFn = runEdge.bind(null, er, st)
     var reOpts = {concurrency: os.cpus().length, shy: opts.shy}
     res = runEdges(data.edges, reFn, reOpts)
-    res.on('complete', function (edge) {
-        st.runCount++
-        edge.outFiles.forEach(function (file) {
-            data.log.update(file.path, st.data.imps[file.path])
-        })
-    })
     ev.on('signal', function (signal) {
         if (signal !== 'SIGINT') res.abort(signal)
         if (er) er.abort(signal)
@@ -92,12 +75,42 @@ function update(data, opts) {
     }, function () { st.output.endUpdate() })
 }
 
-function dryRunEdge(st, edge, cb) {
-    process.nextTick(function () {
-        st.runCount++
-        st.updateMessage(st, edge)
-        return cb(null)
+function runEdge(er, st, edge, cb) {
+    er.run(edge, function (err, stdout, stderr) {
+        doneRunEdge(st, edge, err, stdout, stderr, cb)
     })
+}
+
+function doneRunEdge(st, edge, err, stdout, stderr, cb) {
+    st.updateMessage(st, edge)
+    if (stdout.length > 0 || stderr.length > 0) {
+        st.output.endUpdate()
+        process.stdout.write(stdout)
+        process.stderr.write(stderr)
+    }
+    if (err) return cb(err)
+    st.runCount++
+    edge.outFiles.forEach(function (file) {
+        st.data.log.update(file.path, st.data.imps[file.path])
+    })
+    return cb(null)
+}
+
+function dryExec(cmd, opts, cb) {
+    if (!cb) {
+        cb = opts
+        opts = {}
+    }
+    var stdout = util.format('would run: %s\n', cmd)
+    process.nextTick(cb.bind(null, null, stdout, ''))
+}
+
+function dryMkdirP(dir, opts, cb) {
+    if (!cb) {
+        cb = opts
+        opts = {}
+    }
+    process.nextTick(cb.bind(null, null))
 }
 
 function unlinkOrphans(data, opts, cb) {
