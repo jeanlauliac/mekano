@@ -22,79 +22,143 @@ var REM_ORPHAN = 'Removing orphan: %s'
 var SIGS = ['SIGINT', 'SIGHUP', 'SIGTERM', 'SIGQUIT']
 
 function updateGraph(data, opts) {
+    if (!data) throw errors.invalidArg('data', data)
     if (!opts) opts = {}
-    var ev = new EventEmitter()
+    return new UpdateGraphTask(data, opts)
+}
+
+util.inherits(UpdateGraphTask, EventEmitter)
+function UpdateGraphTask(data, opts) {
+    this._data = data
+    this._dryRun = opts['dry-run'] || false
+    this._robot = opts['robot'] || false
+    this._shy = opts['shy'] || false
+    this._edgeRunner = new EdgeRunner(data.cmds, this._getEdgeRunnerOpts())
+    this._runCount = 0
+    this._output = new Output(this._dryRun)
+    var self = this
     unlinkOrphans(data, opts, function (err) {
-        if (err) return helpers.bailoutEv(ev, err)
-        var uev = update(data, opts)
-        var sigInfo = registerSigs(function onSignal(signal) {
-            uev.emit('signal', signal)
-        })
-        forwardEvents(ev, uev, function (errored, signal) {
-            unregisterSigs(sigInfo)
-            if (opts['dry-run']) return ev.emit('finish')
-            mkdirp(path.dirname(common.LOG_PATH), function (err) {
-                if (err) return helpers.bailoutEv(ev, err)
-                var s = data.log.save(fs.createWriteStream(common.LOG_PATH))
-                s.end(function () {
-                    ev.emit('finish', signal)
-                })
-            })
-        })
+        if (err) return helpers.bailoutEv(self, err)
+        self._safeUpdate()
     })
-    return ev
 }
 
-function update(data, opts) {
-    var res
-    var ev = new EventEmitter()
-    if (opts['robot']) console.log(' e %d', data.edges.length)
-    if (data.edges.length === 0) return alreadyUpToDate(ev, data, opts)
-    var st = {data: data, runCount: 0, opts: opts
-            , sigints: {}, stopFns: {}
-            , dirs: {}, output: new Output(opts['dry-run'])}
-    st.updateMessage = opts['robot'] ? updateRobotMessage : updateMessage
-    var reFn, er
-    var erOpts = !opts['dry-run'] ? null : {exec: dryExec.bind(null),
-            mkdirP: dryMkdirP.bind(null)}
-    er = new EdgeRunner(data.cmds, erOpts)
-    reFn = runEdge.bind(null, er, st)
-    var reOpts = {concurrency: os.cpus().length, shy: opts.shy}
-    res = runEdges(data.edges, reFn, reOpts)
-    ev.on('signal', function (signal) {
-        if (signal !== 'SIGINT') res.abort(signal)
-        if (er) er.abort(signal)
+UpdateGraphTask.prototype._getEdgeRunnerOpts = function () {
+    if (!this._dryRun) return null
+    return {exec: dryExec.bind(null), mkdirP: dryMkdirP.bind(null)}
+}
+
+UpdateGraphTask.prototype._safeUpdate = function () {
+    var self = this
+    var sigInfo = registerSigs(function onSignal(signal) {
+        if (signal !== 'SIGINT') self._runEdges.abort(signal)
+        self._edgeRunner.abort(signal)
     })
-    st.updateMessage(st, null)
-    return forwardEvents(ev, res, function (errored, signal) {
+    this._update(function (errored, signal) {
+        unregisterSigs(sigInfo)
+        if (self._dryRun) return self.emit('finish')
+        self._finalize(signal)
+    })
+}
+
+UpdateGraphTask.prototype._finalize = function (signal) {
+    var self = this
+    mkdirp(path.dirname(common.LOG_PATH), function (err) {
+        if (err) return helpers.bailoutEv(self, err)
+        var s = self._data.log.save(fs.createWriteStream(common.LOG_PATH))
+        s.end(function () {
+            self.emit('finish', signal)
+        })
+    })
+}
+
+UpdateGraphTask.prototype._update = function (cb) {
+    if (this._robot) console.log(' e %d', this._data.edges.length)
+    if (this._data.edges.length === 0) return this._alreadyUpToDate()
+    if (this._robot) this._updateMessage = this._updateRobotMessage
+    var reFn = this._runEdge.bind(this)
+    var reOpts = {concurrency: os.cpus().length, shy: this._shy}
+    this._updateMessage(null)
+    var self = this
+    var res = runEdges(this._data.edges, reFn, reOpts)
+    forwardEvents(this, res, function (errored, signal) {
         if (!errored) {
-            st.updateMessage(st, null)
+            self._updateMessage(null)
         }
-        st.output.endUpdate()
-        ev.emit('finish', signal)
-    }, function () { st.output.endUpdate() })
+        self._output.endUpdate()
+        cb(errored, signal)
+    }, function () { self._output.endUpdate() })
 }
 
-function runEdge(er, st, edge, cb) {
-    er.run(edge, function (err, stdout, stderr) {
-        doneRunEdge(st, edge, err, stdout, stderr, cb)
+UpdateGraphTask.prototype._runEdge = function (edge, cb) {
+    var self = this
+    this._edgeRunner.run(edge, function (err, stdout, stderr) {
+        var res = {err: err, stdout: stdout, stderr: stderr}
+        self._doneRunEdge(edge, res, cb)
     })
 }
 
-function doneRunEdge(st, edge, err, stdout, stderr, cb) {
-    st.updateMessage(st, edge)
-    if (stdout.length > 0 || stderr.length > 0) {
-        st.output.endUpdate()
-        process.stdout.write(stdout)
-        process.stderr.write(stderr)
+UpdateGraphTask.prototype._doneRunEdge = function (edge, res, cb) {
+    this._updateMessage(edge)
+    if (res.stdout.length > 0 || res.stderr.length > 0) {
+        this._output.endUpdate()
+        process.stdout.write(res.stdout)
+        process.stderr.write(res.stderr)
     }
-    if (err) return cb(err)
-    st.runCount++
+    if (res.err) return cb(res.err)
+    this._runCount++
+    var self = this
     edge.outFiles.forEach(function (file) {
-        st.data.log.update(file.path, st.data.imps[file.path])
+        self._data.log.update(file.path, self._data.imps[file.path])
     })
     return cb(null)
 }
+
+UpdateGraphTask.prototype._alreadyUpToDate = function () {
+    if (this._robot) {
+        console.log(' D')
+    } else {
+        if (this._data.cliRefs.length === 0) {
+            console.log(common.EVERYTHING_UTD)
+        } else {
+            var list = this._data.cliRefs.map(function (ref) {
+                return ref.value
+            }).join(', ')
+            console.log(util.format(SOME_UTD, list))
+        }
+    }
+    process.nextTick(this.emit.bind(this, 'finish'))
+}
+
+UpdateGraphTask.prototype._updateRobotMessage = function (edge) {
+    if (!edge) return
+    var name = edge.trans.ast.recipeName
+    var inFiles = edge.inFiles.map(pathOf).join(' ')
+    var outFiles = edge.outFiles.map(pathOf).join(' ')
+    var modifier = this._dryRun ? 'w' : ' '
+    var message = util.format('%sU %d %s %s -- %s', modifier, this._runCount
+                            , name, inFiles, outFiles)
+    console.log(message)
+}
+
+UpdateGraphTask.prototype._updateMessage = function (edge) {
+    var perc = (this._runCount / this._data.edges.length)
+    var label
+    if (edge) {
+        var name = edge.trans.ast.recipeName
+        var inFiles = edge.inFiles.map(pathOf).join(' ')
+        var outFiles = edge.outFiles.map(pathOf).join(' ')
+        label = util.format('%s %s -> %s', name, inFiles, outFiles)
+    } else if (this._runCount === this._data.edges.length) {
+        label = 'Done.'
+    } else {
+        label = 'Updating...'
+    }
+    var percStr = helpers.pad((perc * 100).toFixed(1), 5)
+    var message = util.format('[%s%] %s', percStr, label)
+    this._output.update(message)
+}
+
 
 function dryExec(cmd, opts, cb) {
     if (!cb) {
@@ -138,23 +202,6 @@ function dryUnlink(filePath, cb) {
     setImmediate(cb.bind(null, null))
 }
 
-function alreadyUpToDate(ev, data, opts) {
-    if (opts['robot']) {
-        console.log(' D')
-    } else {
-        if (data.cliRefs.length === 0) {
-            console.log(common.EVERYTHING_UTD)
-        } else {
-            var list = data.cliRefs.map(function (ref) {
-                return ref.value
-            }).join(', ')
-            console.log(util.format(SOME_UTD, list))
-        }
-    }
-    process.nextTick(ev.emit.bind(ev, 'finish'))
-    return ev
-}
-
 function registerSigs(fn) {
     var info = {sigs: {}}
     SIGS.forEach(function (sig) {
@@ -168,36 +215,6 @@ function unregisterSigs(info) {
     SIGS.forEach(function (sig) {
         process.removeListener(sig, info.sigs[sig])
     })
-}
-
-function updateRobotMessage(st, edge) {
-    if (!edge) return
-    var name = edge.trans.ast.recipeName
-    var inFiles = edge.inFiles.map(pathOf).join(' ')
-    var outFiles = edge.outFiles.map(pathOf).join(' ')
-    var modifier = st.opts['dry-run'] ? 'w' : ' '
-    var message = util.format('%sU %d %s %s -- %s', modifier, st.runCount
-                            , name, inFiles, outFiles)
-    console.log(message)
-}
-
-function updateMessage(st, edge) {
-    var perc = (st.runCount / st.data.edges.length)
-    var label
-    if (edge) {
-        var name = edge.trans.ast.recipeName
-        var inFiles = edge.inFiles.map(pathOf).join(' ')
-        var outFiles = edge.outFiles.map(pathOf).join(' ')
-        label = util.format('%s %s -> %s', name, inFiles, outFiles)
-    } else if (st.runCount === st.data.edges.length) {
-        label = 'Done.'
-    } else {
-        label = 'Updating...'
-    }
-    //var action = st.opts['dry-run'] ? 'Would update' : 'Updating'
-    var percStr = helpers.pad((perc * 100).toFixed(1), 5)
-    var message = util.format('[%s%] %s', percStr, label)
-    st.output.update(message)
 }
 
 function pathOf(file) {
