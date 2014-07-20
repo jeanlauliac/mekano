@@ -45,7 +45,7 @@ function UpdateGraphTask(data, opts) {
 
 UpdateGraphTask.prototype._getEdgeRunnerOpts = function () {
     if (!this._dryRun) return null
-    return {exec: dryExec.bind(null), mkdirP: dryMkdirP.bind(null)}
+    return {exec: this._dryExec.bind(this), mkdirP: dryMkdirP.bind(null)}
 }
 
 UpdateGraphTask.prototype._safeUpdate = function () {
@@ -115,9 +115,7 @@ UpdateGraphTask.prototype._doneRunEdge = function (edge, res, cb) {
 }
 
 UpdateGraphTask.prototype._alreadyUpToDate = function () {
-    if (this._robot) {
-        console.log(' D')
-    } else {
+    if (!this._robot) {
         if (this._data.cliRefs.length === 0) {
             console.log(common.EVERYTHING_UTD)
         } else {
@@ -160,12 +158,13 @@ UpdateGraphTask.prototype._updateMessage = function (edge) {
 }
 
 
-function dryExec(cmd, opts, cb) {
+UpdateGraphTask.prototype._dryExec = function (cmd, opts, cb) {
     if (!cb) {
         cb = opts
         opts = {}
     }
-    var stdout = util.format('would run: %s\n', cmd)
+    var tpl = this._robot ? 'wR %s\n' : 'would run: %s\n'
+    var stdout = util.format(tpl, cmd)
     process.nextTick(cb.bind(null, null, stdout, ''))
 }
 
